@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.school.wz_growth.dao.ItemMapper">
+
+<select id="sel_list" parameterType="com.alibaba.fastjson.JSONObject" resultType="com.alibaba.fastjson.JSONObject">
+  select
+  a.id,
+  a.name,
+    ifnull(b.name,a.name) p_name,
+    (select count(1) from sys_content where item_id=a.id) num,
+  date_format(a.create_time,'%Y-%m-%d %H:%i:%s') create_time,
+  a.sort,
+    a.operator,
+    a.left_show
+  from sys_item a
+    left join sys_item b on b.id=a.p_id
+  where 1=1
+  <if test="left_show != null and left_show != ''">
+    and a.left_show = #{left_show}
+  </if>
+  <if test="p_name != null and p_name != ''">
+    and ifnull(b.name,a.name) regexp #{p_name}
+  </if>
+  <if test="type != null and p_name != ''">
+    and a.type = #{type}
+  </if>
+    and a.is_del=2
+  limit ${start},${limit}
+</select>
+<select id="sel_list_total" parameterType="com.alibaba.fastjson.JSONObject" resultType="int">
+  select
+  count(1)
+    from sys_item a
+    left join sys_item b on b.id=a.p_id
+    where 1=1
+    <if test="left_show != null and left_show != ''">
+        and a.left_show = #{left_show}
+    </if>
+    <if test="p_name != null and p_name != ''">
+        and ifnull(b.name,a.name) regexp #{p_name}
+    </if>
+    <if test="type != null and p_name != ''">
+        and a.type = #{type}
+    </if>
+    and a.is_del=2
+</select>
+
+    <update id="del_list"  parameterType="com.alibaba.fastjson.JSONObject">
+        update sys_item
+        set is_del=1
+        where id in (${ids})
+    </update>
+
+
+    <insert id="add_list"  parameterType="com.alibaba.fastjson.JSONObject">
+        insert into sys_item(name,p_id,sort,left_show,type,create_time,operator)
+        values(#{name},#{p_id},#{sort},#{left_show},#{type},now(),#{operator})
+    </insert>
+
+    <update id="upd_list"  parameterType="com.alibaba.fastjson.JSONObject">
+        update sys_item
+        set
+        <if test="name != null and name != ''">
+            name =#{name},
+        </if>
+        <if test="p_id != null and p_id != ''">
+            p_id=#{p_id},
+        </if>
+        <if test="sort != null and sort != ''">
+            sort=#{sort},
+        </if>
+        <if test="left_show != null and left_show != ''">
+            left_show=#{left_show},
+        </if>
+        <if test="operator != null and operator != ''">
+            operator=#{operator},
+        </if>
+        <if test="status != null and status != ''">
+            status=#{status},
+        </if>
+        modify_time=now()
+        where id=#{id}
+    </update>
+
+    <select id="p_item_list" resultType="com.alibaba.fastjson.JSONObject">
+        select id p_id,name from sys_item
+        where p_id=0 and is_del=2
+    </select>
+
+</mapper>

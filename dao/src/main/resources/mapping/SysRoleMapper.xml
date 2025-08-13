@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.school.wz_growth.dao.SysRoleMapper">
+
+
+  <resultMap id="BaseResultMap" type="com.school.wz_growth.model.domain.sys.SysRole">
+    <result column="id" property="id" jdbcType="INTEGER" />
+    <result column="role_name" property="roleName" jdbcType="VARCHAR" />
+    <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="description" property="description" jdbcType="VARCHAR" />
+    <result column="menu_ids" property="menu_ids" jdbcType="VARCHAR" />
+
+  </resultMap>
+
+  <!--查询角色列表-->
+  <select id="querySysRoleByPage" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+    SELECT
+    id as id ,role_name as role_name, create_time as create_time,ifnull(description,'')as description
+    FROM
+    sys_role AS a
+    <if test="pageIndex !=null">
+      LIMIT #{pageIndex},#{pageSize}
+    </if>
+
+  </select>
+  <select id="querySysRoleByPageCount" parameterType="java.util.HashMap" resultType="java.lang.Integer">
+    SELECT
+      count(*)
+    FROM
+      sys_role
+  </select>
+  <!--根据id查询角色-->
+  <select id="querySysRoleById" parameterType="java.lang.Integer" resultType="com.school.wz_growth.model.domain.sys.SysRole">
+    SELECT
+      id as id ,role_name as roleName, create_time as createTime  ,ifnull(description,'')as description
+    FROM
+      sys_role
+    where id=#{roleId}
+  </select>
+  <select id="selectAllRole" parameterType="map" resultType="map">
+    select  id as id ,role_name as role_name,  date_format(create_time,'%Y-%m-%d %H:%i:%s') as create_time ,ifnull(description,'')as description,
+    role.status,
+    (
+    SELECT
+    GROUP_CONCAT(menu.id)
+    FROM
+    sys_role_menu role_menu
+    LEFT JOIN sys_menu menu ON role_menu.menu_id REGEXP CONCAT(',',menu.id,',')
+    WHERE
+    role_menu.role_id = role.id
+    ) as menu_ids,
+    operation as operate_name
+    FROM
+    sys_role role
+    <where>
+      1=1
+      <if test="name!='' and name!=null">
+        AND role.role_name REGEXP #{name}
+      </if>
+    </where>
+    ORDER BY id DESC
+
+  </select>
+  <!-- limit #{pageIndex},#{pageSize}-->
+
+  <insert id="insertSysRole" parameterType="map" useGeneratedKeys="true" keyProperty="id">
+    insert into sys_role
+      (role_name,create_time,status,description,operation,modify_time)
+    values
+      (#{role_name},now(),#{status},#{description},#{operation},now())
+  </insert>
+
+
+
+
+  <update id="updateSysRole" parameterType="map">
+    update sys_role
+    SET
+    <if test="null!=role_name and ''!=role_name">
+      role_name = #{role_name},
+    </if>
+
+    <if test="null !=description and ''!=description">
+      description = #{description},
+    </if>
+    <if test="null!=status and ''!=status">
+      status = #{status},
+    </if>
+    <if test="null!=operation and ''!=operation">
+      operation = #{operation},
+    </if>
+
+    modify_time = now()
+    where id = #{id}
+  </update>
+
+
+  <delete id="batchDeleteSysRole" parameterType="java.util.HashMap">
+    DELETE  from sys_role_menu where role_id in (${ids});
+    DELETE  from sys_role where id in (${ids});
+  </delete>
+
+</mapper>

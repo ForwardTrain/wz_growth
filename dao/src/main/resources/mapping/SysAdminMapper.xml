@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.school.wz_growth.dao.SysAdminMapper">
+
+    <select id="selAdminByUserName" parameterType="java.util.Map" resultType="java.util.Map">
+        SELECT
+            *
+        FROM
+          sys_admin
+        WHERE
+        1=1
+        <if test="null !=user_name">
+          and  user_name =#{user_name}
+        </if>
+        <if test="null !=u_id">
+            and  id =#{u_id}
+        </if>
+    </select>
+    <update id="updateAdminById" parameterType="java.util.Map">
+        UPDATE  sys_admin
+        set modify_time=now(),
+           psd=#{psd}
+        where  id=#{u_id}
+    </update>
+
+    <select id="select_sys_account_list" parameterType="map" resultType="map">
+        select
+        spb.id, spb.`user_name`,spb.`tel`,
+        IF(spb.`user_name`='admin','2','1') as is_show,
+        IF(spb.`user_name`='admin','',`tel`) as tel,
+        spb.`name`,spb.`status`,
+        SUBSTR(spb.role_ids FROM 2 FOR (LENGTH(spb.role_ids)-2)) as role_ids,
+        SUBSTR(spb.job_ids FROM 2 FOR (LENGTH(spb.job_ids)-2)) as job_ids,
+
+        (SELECT GROUP_CONCAT(`role_name`) FROM sys_role role WHERE spb.role_ids REGEXP CONCAT(',',role.id,',')) as role_names,
+        (SELECT GROUP_CONCAT(`name`) FROM sys_organization_job job WHERE spb.job_ids REGEXP CONCAT(',',job.id,',')) as job_names,
+
+        spb.operator,
+        DATE_FORMAT(spb.modify_time,'%Y-%m-%d %H:%i:%s') AS modify_time
+        from
+        sys_admin spb
+        <where>
+            1=1
+            <if test="user_name!=null and user_name!=''">
+                AND spb.user_name REGEXP #{user_name}
+            </if>
+            <if test="role_id!=null and role_id!=''">
+                AND spb.role_ids REGEXP CONCAT(',', #{role_id},',')
+            </if>
+            <if test="job_id!=null and job_id!=''">
+                AND spb.job_ids REGEXP CONCAT(',', #{job_id},',')
+            </if>
+            <if test="status!=null and status!=''">
+                AND spb.status = #{status}
+            </if>
+            <if test="tel!=null and tel!=''">
+                AND spb.tel REGEXP #{tel}
+            </if>
+        </where>
+        order by spb.id desc
+        limit ${start},${limit}
+    </select>
+    <select id="select_sys_account_list_count" parameterType="map" resultType="int">
+        select
+        COUNT(1)
+        from
+        sys_admin spb
+        <where>
+            1=1
+            <if test="user_name!=null and user_name!=''">
+                AND spb.user_name REGEXP #{user_name}
+            </if>
+            <if test="role_id!=null and role_id!=''">
+                AND spb.role_ids REGEXP CONCAT(',', #{role_id},',')
+            </if>
+            <if test="job_id!=null and job_id!=''">
+                AND spb.job_ids REGEXP CONCAT(',', #{job_id},',')
+            </if>
+            <if test="status!=null and status!=''">
+                AND spb.status = #{status}
+            </if>
+            <if test="tel!=null and tel!=''">
+                AND spb.tel REGEXP #{tel}
+            </if>
+        </where>
+    </select>
+    <select id="select_account_info" parameterType="map" resultType="map">
+        SELECT
+        admin.*
+        FROM
+        sys_admin admin
+        <where>
+            1=1
+            <if test="user_name !=null and user_name!=''">
+                and admin.user_name = #{user_name}
+            </if>
+            <if test="id !=null and id!=''">
+                and admin.id = #{id}
+            </if>
+            <if test="not_id !=null and not_id!=''">
+                and admin.id &lt;&gt; #{not_id}
+            </if>
+            <if test="u_id !=null and u_id!=''">
+                and admin.id = #{u_id}
+            </if>
+            <if test="account_id!=null and account_id!=''">
+                and admin.id = #{account_id}
+            </if>
+        </where>
+    </select>
+    <update id="update_account_info" parameterType="map">
+        UPDATE `sys_admin`
+        <set>
+            <if test="user_name!=null and user_name!=''">
+                `user_name` = #{user_name},
+            </if>
+            <if test="psd!=null and psd!=''">
+                `psd` = #{psd},
+            </if>
+            <if test="tel!=null and tel!=''">
+                `tel` = #{tel},
+            </if>
+            <if test="name!=null and name!=''">
+                `name` = #{name},
+            </if>
+
+            <if test="role_ids!=null and role_ids!=''">
+                `role_ids` = #{role_ids},
+            </if>
+            <if test="job_ids!=null and job_ids!=''">
+                `job_ids` = #{job_ids},
+            </if>
+            <if test="status!=null and status!=''">
+                `status` = #{status},
+            </if>
+            `operator`=#{operator},
+            `modify_time` = NOW()
+        </set>
+        WHERE
+        `id` = #{id}
+    </update>
+    <insert id="insert_account_info" parameterType="map" keyProperty="id" useGeneratedKeys="true">
+        INSERT INTO  `sys_admin`
+        (
+            `user_name`, `psd`, `status`, `create_time`, `modify_time`,
+            `name`, `tel`, `role_ids`, `job_ids`,`operator`)
+        VALUES
+            ( #{user_name}, #{psd}, #{status}, NOW(), NOW(),
+              #{name}, #{tel},#{role_ids},#{job_ids},#{operator} )
+    </insert>
+    <update id="update_account_info_status" parameterType="map">
+        UPDATE `sys_admin`
+        set
+            `status` = #{status},
+            `operator`=#{operator},
+            `modify_time` = NOW()
+        WHERE
+            `id` = #{id}
+    </update>
+    <delete id="delete_account_info" parameterType="map">
+        delete from  sys_admin
+        where id in(${ids})
+    </delete>
+</mapper>

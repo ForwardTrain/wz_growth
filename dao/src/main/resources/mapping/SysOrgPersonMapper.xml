@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.school.wz_growth.dao.SysOrgPersonMapper">
+
+    <select id="selOrgPersonByTelOrId" parameterType="java.util.Map"  resultType="java.util.Map">
+        SELECT
+        *
+        FROM
+        sys_organization_person
+        WHERE
+        1=1
+        <if test="tel !=null">
+            and tel = #{tel}
+        </if>
+        <if test="id !=null">
+            and id = #{id}
+        </if>
+        <if test="phone !=null">
+            and tel = #{phone}
+        </if>
+        <if test="u_id !=null">
+            and id = #{u_id}
+        </if>
+    </select>
+    <select id="selOrgPersonJobList" parameterType="java.util.Map" resultType="java.util.Map">
+        SELECT
+            *
+        FROM
+            wz_growth.sys_organization_job;
+    </select>
+
+    <select id="queryOrgPersonList" resultType="java.util.Map">
+        SELECT
+            person.id,
+            person.`name`,
+            person.tel,
+            person.state,
+            person.create_time,
+            person.org_id,
+            person.role_id,
+            IFNULL(person.job_id, '') AS job_id,
+            IFNULL((SELECT
+                    name
+                FROM
+                    wz_growth.sys_organization_job
+                WHERE
+                    id = person.job_id),
+            '') AS job_name,
+            IFNULL((SELECT
+                    role_name as role_name
+                        FROM
+                            sys_role
+                        WHERE
+                            id = person.role_id),
+                    '') AS role_name,
+            (SELECT
+                    org_name
+                FROM
+                    sys_organization_dept
+                WHERE
+                    id = person.org_id) AS dept_name
+        FROM
+            sys_organization_person AS person
+        ORDER BY person.create_time ASC
+        LIMIT #{pageIndex},#{pageSize}
+    </select>
+    <select id="queryOrgPersonListCount" resultType="java.lang.Integer">
+        SELECT
+          count(person.id) as count
+        FROM
+        sys_organization_person as person
+    </select>
+    <select id="queryJobPersonList" parameterType="java.util.Map" resultType="java.util.Map">
+        SELECT
+            job.*,
+            (SELECT
+                    GROUP_CONCAT(name)
+                FROM
+                    wz_growth.sys_organization_person
+                WHERE
+                    job_id = job.id) AS u_names
+        FROM
+            wz_growth.sys_organization_job AS job
+    </select>
+
+
+    <insert id="addOrgPerson"  useGeneratedKeys="true" keyProperty="id" parameterType="java.util.Map" >
+        insert  into  sys_organization_person
+        (`name`,tel,psd,org_id,create_time,modify_time,state,
+        role_id,job_id)
+        VALUES (#{name},#{tel},#{psd},#{org_id},now(),now(),#{state},
+        #{role_id},#{job_id})
+    </insert>
+
+    
+
+
+
+    <update id="updateOrgPersonState" parameterType="java.util.Map">
+        UPDATE  sys_organization_person
+        set
+        modify_time=now()
+        <if test="null !=state">
+            ,`state`=#{state}
+        </if>
+        where id=#{id}
+    </update>
+    <update id="updateOrgPerson" parameterType="java.util.Map">
+        UPDATE  sys_organization_person
+        set
+        modify_time=now()
+        <if test="null !=name">
+            ,`name`=#{name}
+        </if>
+        <if test="null !=tel">
+            ,`tel`=#{tel}
+        </if>
+        <if test="null !=psd">
+            ,`psd`=#{psd}
+        </if>
+        <if test="null !=org_id">
+            ,`org_id`=#{org_id}
+        </if>
+        <if test="null !=state">
+            ,`state`=#{state}
+        </if>
+        <if test="null !=role_id">
+            ,`role_id`=#{role_id}
+        </if>
+        <!--<if test="null !=job_id">-->
+            ,`job_id`=#{job_id}
+        <!--</if>-->
+        where id=#{id}
+    </update>
+    <update id="updateOrgPersonPsd" parameterType="java.util.Map">
+        UPDATE  sys_organization_person
+        set
+        modify_time=now()
+        <if test="null !=psd">
+            ,`psd`=#{psd}
+        </if>
+        where id=#{u_id}
+    </update>
+
+
+
+
+
+
+    <delete id="delOrgPerson" parameterType="java.util.Map">
+        DELETE from sys_organization_person
+        where id=#{id}
+    </delete>
+    <delete id="delOrgPersonByDeptId" parameterType="java.util.Map">
+        DELETE from sys_organization_person
+        where org_id=#{org_id}
+    </delete>
+    <delete id="delOrgPersons" parameterType="java.util.Map">
+        DELETE from sys_organization_person
+        where id
+        in (
+             ${ids}
+           )
+    </delete>
+</mapper>

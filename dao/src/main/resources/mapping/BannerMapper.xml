@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.school.wz_growth.dao.BannerMapper">
+
+    <select id="banner_list" parameterType="com.alibaba.fastjson.JSONObject" resultType="com.alibaba.fastjson.JSONObject">
+        select
+        p.id,p.name,p.status,p.start_time,p.end_time,a.user_name u_name
+        from  banner_plan p
+        left join sys_admin a on a.id=p.u_id
+        where 1=1
+        <if test="name != null and name != ''">
+            and p.name regexp #{name}
+        </if>
+        <if test="user_name != null and user_name != ''">
+            and a.user_name regexp #{user_name}
+        </if>
+        <if test="status != null and status != ''">
+            and p.status =#{status}
+        </if>
+        <if test="start_time != null and start_time != ''">
+            and p.start_time &gt;=#{start_time}
+        </if>
+        <if test="end_time != null and end_time != ''">
+            and p.end_time &lt;=#{end_time}
+        </if>
+        <if test="c_s_date != null and c_s_date != ''">
+            and p.start_time &lt;=#{c_s_date}
+        </if>
+        <if test="c_s_date != null and c_s_date != ''">
+            and p.end_time &gt;=#{c_s_date}
+        </if>
+        order by p.id desc
+        limit #{start},#{limit}
+    </select>
+    <select id="banner_list_count" parameterType="com.alibaba.fastjson.JSONObject" resultType="int">
+        select
+        count(1)
+        from  banner_plan p
+        left join sys_admin a on a.id=p.u_id
+        where 1=1
+        <if test="name != null and name != ''">
+            and p.name regexp #{name}
+        </if>
+        <if test="user_name != null and user_name != ''">
+            and a.user_name regexp #{user_name}
+        </if>
+        <if test="status != null and status != ''">
+            and p.status =#{status}
+        </if>
+        <if test="start_time != null and start_time != ''">
+            and p.start_time &gt;=#{start_time}
+        </if>
+        <if test="end_time != null and end_time != ''">
+            and p.end_time &lt;=#{end_time}
+        </if>
+
+        <if test="c_s_date != null and c_s_date != ''">
+            and p.start_time &lt;=#{c_s_date}
+        </if>
+        <if test="c_s_date != null and c_s_date != ''">
+            and p.end_time &gt;=#{c_s_date}
+        </if>
+    </select>
+
+    <update id="banner_open_close" parameterType="com.alibaba.fastjson.JSONObject">
+        update banner_plan set status=#{status} where id=#{id}
+    </update>
+
+    <delete id="banner_del" parameterType="com.alibaba.fastjson.JSONObject">
+        delete from  banner_plan where id in (${ids});
+        delete from  banner_plan_detail where data_id in (${ids});
+    </delete>
+
+    <delete id="del_banner" parameterType="com.alibaba.fastjson.JSONObject">
+        delete from  banner_plan_detail where data_id =#{id}
+    </delete>
+
+    <insert id="banner_add" parameterType="com.alibaba.fastjson.JSONObject"
+            useGeneratedKeys="true" keyProperty="id">
+        insert into banner_plan(
+        name,status,start_time,end_time,u_id,create_time,time_lag
+        )values(
+        #{name},
+        #{status},
+        #{start_time},
+        #{end_time},
+        #{u_id},
+        now(),
+        #{time_lag}
+        )
+    </insert>
+    <insert id="banner_add_details" parameterType="com.alibaba.fastjson.JSONObject"  >
+        insert into banner_plan_detail(
+        path,name,sequence,data_id,create_time
+        )values
+        <foreach collection="list" item="item" separator=",">
+            (
+            #{item.path},#{item.name},#{item.sequence},#{item.data_id},now()
+            )
+        </foreach>
+    </insert>
+    <select id="banner_sel_detail" parameterType="com.alibaba.fastjson.JSONObject"
+            resultType="com.alibaba.fastjson.JSONObject"  >
+       select * from banner_plan
+        where id &gt;0 limit 1
+    </select>
+    <select id="banner_sel_detail_d" parameterType="com.alibaba.fastjson.JSONObject"
+            resultType="com.alibaba.fastjson.JSONObject"  >
+       select * from banner_plan_detail
+        where data_id=#{id}
+    </select>
+
+    <select id="sel_banner_time" parameterType="com.alibaba.fastjson.JSONObject"
+            resultType="int"  >
+       select count(1) from banner_plan
+        where 1=1
+        <if test="id != null and id != ''">
+            and id != #{id}
+        </if>
+        and (
+        (start_time &lt;=#{start_time} and end_time &gt;=#{start_time} )
+        or
+        (start_time &lt;=#{end_time} and end_time &gt;=#{end_time} )
+        )
+    </select>
+
+    <update id="banner_upd" parameterType="com.alibaba.fastjson.JSONObject"
+             >
+       update banner_plan
+        set
+        name=#{name},
+        start_time=#{start_time},
+        end_time=#{end_time},
+        u_id=#{u_id},
+        time_lag=#{time_lag},
+
+        modify_time=now()
+        where id=#{id}
+    </update>
+    <select id="sel_home_protein_num_count" resultType="map">
+        SELECT
+            `name`, num,
+            FORMAT(num/total,2) ratio
+        FROM (
+                 SELECT
+                     `name`,
+                     (SELECT COUNT(id) FROM sys_protein_type_unipro WHERE type_id=spt.id) as num,
+                     (SELECT COUNT(id) FROM sys_protein_type_unipro) as total
+                 FROM
+                     sys_protein_type spt
+             ) temp_a
+        ORDER BY ratio DESC
+       LIMIT 6
+    </select>
+    <select id="sel_home_family_count"  resultType="map">
+        SELECT
+            CASE view_type
+                WHEN 4 THEN  'HDGF family'
+                WHEN 5 THEN  'IDGF family'
+                ELSE `name`
+                END  `name`,
+
+            view_type,family_type,  id,
+            (
+                SELECT COUNT(1) FROM sys_protein_type_unipro WHERE family_id=type.id
+            ) as  num,
+            (
+                SELECT COUNT(1) FROM sys_protein_type_unipro WHERE family_id=type.id
+            )/temp_a.total_count as ratio
+
+        FROM
+            sys_protein_type  type
+                LEFT JOIN(
+                SELECT COUNT(*) total_count FROM sys_protein_type_unipro
+            ) temp_a ON 1=1
+        WHERE
+            view_type is not NULL
+        ORDER BY ratio DESC
+            LIMIT 8
+    </select>
+    <select id="sel_home_family_count_bg" parameterType="map" resultType="string">
+        SELECT IFNULL(CONCAT(#{qiniu_base_url},`value`),"") img  FROM sys_params WHERE type=5
+    </select>
+
+
+
+</mapper>

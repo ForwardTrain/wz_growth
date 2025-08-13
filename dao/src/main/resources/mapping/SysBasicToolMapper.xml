@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.school.wz_growth.dao.SysBasicToolMapper">
+
+
+    <!--<select id="china_node_p" resultType="map" parameterType="string">-->
+        <!--SELECT-->
+        <!--id,name,p_code,code-->
+        <!--FROM-->
+        <!--`china`-->
+        <!--WHERE-->
+        <!--p_code = 0-->
+    <!--</select>-->
+    <select id="china_node_code" resultType="map" parameterType="map">
+        SELECT
+        id,name,p_code,code
+        FROM
+        `china`
+        <where>
+            1=1
+            <if test="code!='' and code!=null">
+               and p_code = #{code}
+            </if>
+            <if test="name!='' and name!=null">
+                and name REGEXP #{name}
+            </if>
+        </where>
+
+    </select>
+
+
+</mapper>

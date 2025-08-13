@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.school.wz_growth.dao.LiteraturesMapper">
+
+    <select id="sel_clinicaltrials_list" parameterType="map"  resultType="map">
+        SELECT
+            `id`,
+            `briefTitle`,
+            `nct_number`,
+            `overallStatus`,
+            `studyType`,
+
+            `leadSponsor`,
+            `StudyFirstPostDateStruct`,
+             CONCAT('https://clinicaltrials.gov/study/',`nct_number`) as link_url
+
+        FROM
+            CT_main main
+        <where>
+            1=1
+            <if test="name != null and name != ''">
+                AND main.briefTitle REGEXP #{name}
+            </if>
+        </where>
+        ORDER BY  id  ASC
+        LIMIT #{page_index},#{page_size}
+    </select>
+    <select id="sel_clinicaltrials_list_count" parameterType="map" resultType="long">
+        SELECT
+            count(1)
+        FROM
+            CT_main main
+        <where>
+            1=1
+            <if test="name != null and name != ''">
+                AND main.briefTitle REGEXP #{name}
+            </if>
+        </where>
+    </select>
+    <delete id="del_clinicaltrials_list" parameterType="map">
+        DELETE FROM CT_main_interventions WHERE main_id in ( ${ids} );
+        DELETE FROM CT_main_conditions WHERE main_id in ( ${ids} );
+        DELETE FROM CT_main_collaborators WHERE main_id in ( ${ids} );
+
+        DELETE FROM CT_main WHERE id in ( ${ids} );
+    </delete>
+
+
+
+    <select id="sel_GM_list" parameterType="map"  resultType="map">
+        SELECT
+        main.*,--         (SELECT GROUP_CONCAT( str  order by `index` ASC  SEPARATOR ' ; ') FROM GM_main_mesh WHERE main_id=main.id) as `mesh`
+
+        CONCAT('https://pubmed.ncbi.nlm.nih.gov/',main.PMID,'/') PMID_url,
+        IF(main.identities_doi is null OR main.identities_doi='','',CONCAT('https://www.tandfonline.com/doi/abs/',main.identities_doi)) identities_doi_url,
+        (SELECT GROUP_CONCAT(fullName SEPARATOR ' ; ') FROM GM_main_authors WHERE main_id=main.id) as `authors`
+        --         (SELECT GROUP_CONCAT( str  order by `index` ASC  SEPARATOR ' ; ') FROM GM_main_mesh WHERE main_id=main.id) as `mesh`
+        FROM
+        GM_main main
+        <where>
+            1=1
+            <if test="title != null and title != ''">
+                AND main.article_title REGEXP #{title}
+            </if>
+            <if test="PMID != null and PMID != ''">
+                AND main.PMID REGEXP #{PMID}
+            </if>
+        </where>
+        ORDER BY  id  ASC
+        LIMIT #{page_index},#{page_size}
+    </select>
+    <select id="sel_GM_list_count" parameterType="map" resultType="long">
+        SELECT
+        count(1)
+        FROM
+        GM_main main
+        <where>
+            1=1
+            <if test="title != null and title != ''">
+                AND main.article_title REGEXP #{title}
+            </if>
+            <if test="PMID != null and PMID != ''">
+                AND main.PMID REGEXP #{PMID}
+            </if>
+        </where>
+    </select>
+    <select id="sel_GM_brief_list" parameterType="map" resultType="map">
+        SELECT * FROM GM_main_article WHERE main_id=#{id} ORDER BY `index` ASC
+    </select>
+    <delete id="del_GM_list" parameterType="map">
+        DELETE FROM GM_main_article WHERE main_id in ( ${ids} );
+        DELETE FROM GM_main_authors WHERE main_id in ( ${ids} );
+        DELETE FROM GM_main_mesh WHERE main_id in ( ${ids} );
+
+        DELETE FROM GM_main WHERE id in ( ${ids} );
+    </delete>
+
+
+
+
+    <select id="sel_TL_list" parameterType="map"  resultType="map">
+        SELECT
+        main.*,
+        detail.inventor inventors
+        FROM
+        TL_main main
+        LEFT JOIN TL_main_detail detail ON detail.main_id=main.id
+        <where>
+            1=1
+            <if test="title != null and title != ''">
+                AND main.Title REGEXP #{title}
+            </if>
+        </where>
+        ORDER BY  main.id  ASC
+        LIMIT #{page_index},#{page_size}
+    </select>
+    <select id="sel_TL_list_count" parameterType="map" resultType="long">
+        SELECT
+        count(1)
+        FROM
+        TL_main main
+        <where>
+            1=1
+            <if test="title != null and title != ''">
+                AND main.Title REGEXP #{title}
+            </if>
+        </where>
+    </select>
+    <delete id="del_TL_list" parameterType="map">
+        DELETE FROM TL_main WHERE id in ( ${ids} );
+    </delete>
+
+    <select id="sel_TL_list_source" parameterType="map" resultType="map">
+        SELECT * FROM `t_lens_data` WHERE id IN (
+            <foreach collection="ids" item="item" separator=",">
+                #{item}
+            </foreach>
+            )
+    </select>
+    <select id="sel_TL_list_source_ids" parameterType="map" resultType="string">
+        SELECT id FROM  t_lens_data
+        WHERE is_parse is NULL OR is_parse!=1
+        ORDER BY id asc
+        LIMIT #{start},#{limit}
+    </select>
+    <select id="sel_TL_list_source_count" resultType="int">
+        SELECT COUNT(id) FROM `t_lens_data`
+        WHERE is_parse is NULL OR is_parse!=1
+    </select>
+
+    <insert id="insert_TL_main" parameterType="map" useGeneratedKeys="true" keyProperty="main_id">
+        INSERT INTO `wy_school_growth`.`TL_main`
+        (
+         <if test="LensID != null and LensID != ''">
+             `LensID`,
+         </if>
+         <if test="LegalStatus != null and LegalStatus != ''">
+             `LegalStatus`,
+         </if>
+        <if test="identifers != null and identifers != ''">
+            `identifers`,
+        </if>
+        <if test="filed != null and filed != ''">
+            `filed`,
+        </if>
+        <if test="ApplicationNumber != null and ApplicationNumber != ''">
+            `ApplicationNumber`,
+        </if>
+
+        <if test="EarliestPriorityDate != null and EarliestPriorityDate != ''">
+            `EarliestPriorityDate`,
+        </if>
+        <if test="jurisdiction != null and jurisdiction != ''">
+            `jurisdiction`,
+        </if>
+        <if test="date_published != null and date_published != ''">
+            `date_published`,
+        </if>
+        <if test="title != null and title != ''">
+            `title`,
+        </if>
+        `modify_time`
+        )values
+       (
+        <if test="LensID != null and LensID != ''">
+            #{LensID},
+        </if>
+        <if test="LegalStatus != null and LegalStatus != ''">
+            #{LegalStatus},
+        </if>
+        <if test="identifers != null and identifers != ''">
+            #{identifers},
+        </if>
+        <if test="filed != null and filed != ''">
+            #{filed},
+        </if>
+        <if test="ApplicationNumber != null and ApplicationNumber != ''">
+            #{ApplicationNumber},
+        </if>
+
+        <if test="EarliestPriorityDate != null and EarliestPriorityDate != ''">
+            #{EarliestPriorityDate},
+        </if>
+        <if test="jurisdiction != null and jurisdiction != ''">
+            #{jurisdiction},
+        </if>
+        <if test="date_published != null and date_published != ''">
+            #{date_published},
+        </if>
+        <if test="title != null and title != ''">
+            #{title},
+        </if>
+        now()
+        )
+    </insert>
+    <insert id="insert_TL_main_detail" parameterType="map">
+        INSERT INTO `wy_school_growth`.`TL_main_detail`
+        (
+        `main_id`,
+        <if test="abstract != null and abstract != ''">
+            `abstract`,
+        </if>
+
+        <if test="inventor != null and inventor != ''">
+            `inventor`,
+        </if>
+         `modify_time`
+        )values
+        (
+        #{main_id},
+         <if test="abstract != null and abstract != ''">
+            #{abstract},
+        </if>
+         <if test="inventor != null and inventor != ''">
+            #{inventor},
+        </if>
+         now()
+        )
+    </insert>
+    <update id="update_old_data_status" parameterType="map">
+        UPDATE t_lens_data SET `is_parse` = 1 WHERE `id` = #{old_data_id}
+    </update>
+
+</mapper>

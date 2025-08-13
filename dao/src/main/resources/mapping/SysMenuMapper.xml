@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.school.wz_growth.dao.SysMenuMapper">
+  <resultMap id="BaseResultMap" type="com.school.wz_growth.model.domain.sys.SysMenu" >
+    <result column="id" property="id" jdbcType="INTEGER" />
+    <result column="name" property="name" jdbcType="VARCHAR" />
+    <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="sequence" property="sequence" jdbcType="BIGINT" />
+    <result column="status" property="status" jdbcType="BIGINT" />
+    <result column="absolute_url" property="absoluteUrl" jdbcType="VARCHAR" />
+    <result column="pId" property="pId" jdbcType="BIGINT" />
+    <result column="is_config" property="isConfig" jdbcType="BIGINT" />
+      <result column="m_id" property="mId" jdbcType="BIGINT" />
+      <result column="picture_url" property="pictureUrl" jdbcType="VARCHAR"/>
+  </resultMap>
+
+  <sql id="Base_Column_List" >
+    id, name, create_time, sequence, status, absolute_url,pId,is_config,picture_url
+  </sql>
+
+
+  <!--查询menu列表-->
+    <select id="selSysAdminMenuAllList"  resultType="java.util.HashMap">
+     SELECT
+       id,`name`,create_time,status,sequence,absolute_url,pId,is_config,picture_url
+      FROM
+         sys_menu
+      ORDER BY sequence
+    </select>
+    <select id="selSysAdminMenuAllListCount" resultType="java.lang.Integer">
+    SELECT
+      count(*)
+    FROM
+     sys_menu
+  </select>
+    <select id="querySysManagerMenuByPage" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+        SELECT
+           id,`name`, pic_url, seq, state, `code`,absolute_url,pic_s_prl
+        FROM
+            sys_model_menu
+        where state=1
+        ORDER BY seq DESC
+    </select>
+    <select id="querySysManagerMenuByPageCount" parameterType="java.util.HashMap" resultType="java.lang.Integer">
+        SELECT
+           COUNT(*)
+        FROM
+            sys_model_menu
+        where state=1
+        ORDER BY seq DESC
+    </select>
+    <select id="querySysMenuByMenuId" parameterType="java.util.Map" resultType="java.util.HashMap">
+    SELECT
+        *
+    FROM
+        sys_menu
+    WHERE
+        status = 1 AND id IN
+        (${menuIds})
+    ORDER BY pId ASC , sequence ASC
+  </select>
+    <select id="querySysMenuByMenuIdCount" parameterType="java.util.Map" resultType="java.lang.Integer">
+    SELECT
+        count(*)
+    FROM
+        sys_menu
+    WHERE
+        status = 1 AND id IN
+        (${menuIds})
+    ORDER BY pId ASC , sequence ASC
+  </select>
+
+
+
+
+
+
+
+
+
+
+
+
+    <update id="doUpdateModelMenuState"  parameterType="java.util.HashMap" >
+        update sys_model_menu set state=#{state} where pId=#{pId}
+    </update>
+
+
+    <insert id="insertSysMenu" parameterType="com.school.wz_growth.model.domain.sys.SysMenu">
+    insert into sys_menu (`name`, create_time,
+    sequence, status, absolute_url,pId,is_config,modify_time
+    )
+    values (#{name},now(),
+     #{sequence}, #{status}, #{absoluteUrl},#{pId},#{isConfig},now()
+    )
+  </insert>
+
+    <update id="updateSysMenu" parameterType="com.school.wz_growth.model.domain.sys.SysMenu">
+        update sys_menu
+        set
+        modify_time=now()
+        <if test="null !=name">
+            , `name` = #{name}
+        </if>
+        <if test="null !=sequence">
+            ,`sequence` = #{sequence}
+        </if>
+        <if test="null !=status">
+            ,`status` = #{status}
+        </if>
+        <if test="null !=absoluteUrl">
+            , `absolute_url` = #{absoluteUrl}
+        </if>
+        <if test="null !=isConfig">
+            ,`is_config` = #{isConfig}
+        </if>
+        <if test="null !=pictureUrl">
+            ,`picture_url` = #{pictureUrl}
+        </if>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteSysMenuByMenuId" parameterType="java.lang.Integer">
+    DELETE   from  sys_menu WHERE  id=#{id}
+  </delete>
+
+
+    <select id="xxx" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+        -- SELECT * FROM GM_main WHERE journal_isoAbbreviation IS NULL or journal_dp IS NULL
+
+         <![CDATA[
+        SELECT
+        m.article_title,
+        m.PMID,
+        CONCAT('https://pubmed.ncbi.nlm.nih.gov/', m.pmid, '/') AS url,
+        CONCAT_WS('',
+        -- 期刊名称及日期部分，使用CONCAT_WS自动跳过NULL值
+        CONCAT_WS(' ', m.journal_isoAbbreviation, m.journal_dp),
+        -- 如果volume不为空，加上分号和volume
+        IF(m.journal_volume IS NOT NULL AND m.journal_volume <> '', CONCAT(';', m.journal_volume), ''),
+        -- 如果issue不为空，加上括号包裹issue
+        IF(m.journal_issue IS NOT NULL AND m.journal_issue <> '', CONCAT('(', m.journal_issue, ')'), ''),
+        -- 如果page不为空，加上冒号和page
+        IF(m.article_medlinePgn IS NOT NULL AND m.article_medlinePgn <> '', CONCAT(':', m.article_medlinePgn), '')
+        ) AS journal,
+        (
+        SELECT GROUP_CONCAT(a.fullName ORDER BY a.`index` ASC SEPARATOR ';')
+        FROM GM_main_authors a
+        WHERE a.main_id = m.id
+        ) AS all_authors,
+        (
+        SELECT GROUP_CONCAT(ar.brief ORDER BY ar.`index` ASC SEPARATOR '\n\n')
+        FROM GM_main_article ar
+        WHERE ar.main_id = m.id
+        ) AS all_briefs,
+        (
+        SELECT `value`
+        FROM pubmed_data pd
+        WHERE pd.id = m.PMID
+        ) AS keywords
+        FROM GM_main m
+        WHERE
+        m.id BETWEEN #{sId}
+        AND #{eId};
+        ]]>
+    </select>
+    <select id="xxx2_test" resultType="java.util.HashMap">
+          <![CDATA[
+        SELECT
+            m.article_title,
+            m.PMID,
+            CONCAT('https://pubmed.ncbi.nlm.nih.gov/', m.pmid, '/') AS url,
+            CONCAT_WS('',
+                -- 期刊名称及日期部分，使用CONCAT_WS自动跳过NULL值
+                      CONCAT_WS(' ', m.journal_isoAbbreviation, m.journal_dp),
+                -- 如果volume不为空，加上分号和volume
+                      IF(m.journal_volume IS NOT NULL AND m.journal_volume <> '', CONCAT(';', m.journal_volume), ''),
+                -- 如果issue不为空，加上括号包裹issue
+                      IF(m.journal_issue IS NOT NULL AND m.journal_issue <> '', CONCAT('(', m.journal_issue, ')'), ''),
+                -- 如果page不为空，加上冒号和page
+                      IF(m.article_medlinePgn IS NOT NULL AND m.article_medlinePgn <> '', CONCAT(':', m.article_medlinePgn), '')
+            ) AS journal,
+            (
+                SELECT GROUP_CONCAT(a.fullName ORDER BY a.`index` ASC SEPARATOR ';')
+                FROM GM_main_authors a
+                WHERE a.main_id = m.id
+            ) AS all_authors,
+            (
+                SELECT GROUP_CONCAT(ar.brief ORDER BY ar.`index` ASC SEPARATOR '\n\n')
+                FROM GM_main_article ar
+                WHERE ar.main_id = m.id
+            ) AS all_briefs,
+            (
+                SELECT `value`
+                FROM pubmed_data pd
+                WHERE pd.id = m.PMID
+            ) AS keywords
+        FROM GM_main m
+        WHERE
+            m.id BETWEEN '1580618'
+                AND '1580621';
+        ]]>
+    </select>
+
+
+</mapper>

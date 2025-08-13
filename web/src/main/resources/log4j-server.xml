@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+
+<!--<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">-->
+<log4j:configuration debug="true">
+
+    <appender name="biz_appender" class="org.apache.log4j.DailyRollingFileAppender">
+        <param name="File" value="${webapp.root}/logs/biz/biz.log"/>
+        <!-- 设置是否在重新启动服务时，在原有日志的基础添加新日志 -->
+        <param name="Append" value="true"/>
+        <param name="DatePattern" value="'.'yyyy-MM-dd'.log'"/>
+        <param name="MaxBackupIndex" value="10"/>
+        <param name="MaxFileSize" value="4MB"/>
+        <param name="encoding" value="utf-8"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="[date:%d{yyyy-MM-dd HH:mm:ss}] %m%n"/>
+        </layout>
+        <filter class="org.apache.log4j.varia.LevelRangeFilter">
+            <param name="LevelMin" value="40050"/>
+            <param name="LevelMax" value="40050"/>
+        </filter>
+    </appender>
+
+    <!-- Error 日志文件 -->
+    <appender name="error_appender" class="org.apache.log4j.DailyRollingFileAppender">
+        <param name="File" value="${webapp.root}/logs/error/error.html"/>
+        <!-- 设置是否在重新启动服务时，在原有日志的基础添加新日志 -->
+        <param name="Append" value="true"/>
+        <param name="DatePattern" value="yyyy-MM-dd'.html'"/>
+        <param name="MaxBackupIndex" value="20"/>
+        <param name="MaxFileSize" value="4MB"/>
+        <param name="encoding" value="utf-8"/>
+        <layout class="org.apache.log4j.PatternLayout">
+        </layout>
+        <filter class="org.apache.log4j.varia.LevelRangeFilter">
+            <param name="LevelMin" value="ERROR"/>
+            <param name="LevelMax" value="ERROR"/>
+        </filter>
+    </appender>
+
+    <!-- Info Warn 日志 -->
+    <appender name="info_appender" class="org.apache.log4j.DailyRollingFileAppender">
+        <param name="File" value="${webapp.root}/logs/info/log.log"/>
+        <!-- 设置是否在重新启动服务时，在原有日志的基础添加新日志 -->
+        <param name="Append" value="true"/>
+        <param name="DatePattern" value="yyyy-MM-dd'.html'"/>
+        <param name="MaxBackupIndex" value="20"/>
+        <param name="MaxFileSize" value="4MB"/>
+        <param name="encoding" value="utf-8"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="[date:%d{yyyy-MM-dd HH:mm:ss}] %m%n"/>
+        </layout>
+        <filter class="org.apache.log4j.varia.LevelRangeFilter">
+            <param name="LevelMin" value="INFO"/>
+            <param name="LevelMax" value="WARN"/>
+        </filter>
+    </appender>
+
+    <!-- Console 日志 -->
+    <appender name="console_appender" class="org.apache.log4j.ConsoleAppender">
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%-d{yyyy-MM-dd HH:mm:ss} [%5p][%t][%c{1}]-[%M] %m%n"/>
+        </layout>
+    </appender>
+
+    <!-- handleExceptionUtilAppend 中的异常记录 -->
+    <appender name="handleExceptionUtilAppend" class="org.apache.log4j.DailyRollingFileAppender">
+        <param name="File" value="${webapp.root}/logs/exception/gException.log" />
+        <!-- 每小时1个文件 -->
+        <param name="DatePattern" value="'.'yyyy-MM-dd'.log'" />
+        <!-- 最大文件的size,单位:Kb,Mb... -->
+        <param name="MaxFileSize" value="4MB" />
+        <!-- 重启了服务器之后，是否在原有文件的后面追加？true(默认):追加;false:不追加 -->
+        <param name="Append" value="true"/>
+        <!-- 默认 MaxBackupIndex 为 1 -->
+        <param name="MaxBackupIndex" value="20" />
+        <param name="Encoding" value="utf-8"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%-d{yyyy-MM-dd HH:mm:ss} [%5p] %m%n" />
+        </layout>
+        <filter class="org.apache.log4j.varia.LevelRangeFilter">
+            <param name="LevelMin" value="INFO" />
+            <param name="LevelMax" value="WARN" />
+        </filter>
+    </appender>
+
+    <!-- DescOperationService 的日志记录 -->
+    <appender name="descOperationServiceAppender" class="org.apache.log4j.DailyRollingFileAppender">
+        <param name="File" value="${webapp.root}/logs/desc/desc.log" />
+        <!-- 每小时1个文件 -->
+        <param name="DatePattern" value="'.'yyyy-MM-dd'.log'" />
+        <!-- 最大文件的size,单位:Kb,Mb... -->
+        <param name="MaxFileSize" value="4MB" />
+        <!-- 重启了服务器之后，是否在原有文件的后面追加？true(默认):追加;false:不追加 -->
+        <param name="Append" value="true"/>
+        <!-- 默认 MaxBackupIndex 为 1 -->
+        <param name="MaxBackupIndex" value="20" />
+        <param name="Encoding" value="utf-8"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%-d{yyyy-MM-dd HH:mm:ss} %m%n" />
+        </layout>
+        <filter class="org.apache.log4j.varia.LevelRangeFilter">
+            <param name="LevelMin" value="INFO" />
+            <param name="LevelMax" value="WARN" />
+        </filter>
+    </appender>
+
+    <!-- ActiveService 的日志记录 -->
+    <appender name="activeServiceAppender" class="org.apache.log4j.DailyRollingFileAppender">
+        <param name="File" value="${webapp.root}/logs/active/active.log" />
+        <!-- 每小时1个文件 -->
+        <param name="DatePattern" value="'.'yyyy-MM-dd'.log'" />
+        <!-- 最大文件的size,单位:Kb,Mb... -->
+        <param name="MaxFileSize" value="4MB" />
+        <!-- 重启了服务器之后，是否在原有文件的后面追加？true(默认):追加;false:不追加 -->
+        <param name="Append" value="true"/>
+        <!-- 默认 MaxBackupIndex 为 1 -->
+        <param name="MaxBackupIndex" value="20" />
+        <param name="Encoding" value="utf-8"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%-d{yyyy-MM-dd HH:mm:ss} %m%n" />
+        </layout>
+        <filter class="org.apache.log4j.varia.LevelRangeFilter">
+            <param name="LevelMin" value="INFO" />
+            <param name="LevelMax" value="WARN" />
+        </filter>
+    </appender>
+
+    <!-- Access log 的日志记录 -->
+    <appender name="AccessLogAppender" class="org.apache.log4j.DailyRollingFileAppender">
+        <param name="File" value="${webapp.root}/logs/access/access.log" />
+        <!-- 每小时1个文件 -->
+        <param name="DatePattern" value="'.'yyyy-MM-dd'.log'" />
+        <!-- 最大文件的size,单位:Kb,Mb... -->
+        <param name="MaxFileSize" value="4MB" />
+        <!-- 重启了服务器之后，是否在原有文件的后面追加？true(默认):追加;false:不追加 -->
+        <param name="Append" value="true"/>
+        <!-- 默认 MaxBackupIndex 为 1 -->
+        <param name="MaxBackupIndex" value="20" />
+        <param name="Encoding" value="utf-8"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%-d{yyyy-MM-dd HH:mm:ss} %m%n" />
+        </layout>
+        <filter class="org.apache.log4j.varia.LevelRangeFilter">
+            <param name="LevelMin" value="INFO" />
+            <param name="LevelMax" value="WARN" />
+        </filter>
+    </appender>
+
+
+
+    <logger name="com.school.wz_growth.web.interceptor.HandleExceptionUtil" additivity="true">
+        <appender-ref ref="handleExceptionUtilAppend" />
+    </logger>
+
+    <!--##########################trace log start########################################################-->
+    <!--错误日志-添加到root中-->
+    <appender name="TRACE_ERROR_LOGGER" class="org.apache.log4j.DailyRollingFileAppender">
+        <!-- 设置是否在重新启动服务时，在原有日志的基础添加新日志 test dev -->
+        <param name="File" value="${webapp.root}/logs2/trace/error.log"/>
+        <param name="DatePattern" value="'.'yyyy-MM-dd-HH"/>
+        <param name="encoding" value="utf-8"/>
+        <layout class="org.apache.log4j.PatternLayout"/>
+        <filter class="org.apache.log4j.varia.LevelRangeFilter">
+            <param name="LevelMin" value="ERROR"/>
+            <param name="LevelMax" value="ERROR"/>
+        </filter>
+    </appender>
+    <!--SQL执行日志-->
+    <appender name="TRACE_SQL_LOGGER" class="org.apache.log4j.DailyRollingFileAppender">
+        <param name="File" value="${webapp.root}/logs2/trace/sql.log"/>
+        <param name="DatePattern" value="'.'yyyy-MM-dd-HH"/>
+        <param name="encoding" value="utf-8"/>
+        <layout class="org.apache.log4j.PatternLayout"/>
+        <filter class="org.apache.log4j.varia.LevelRangeFilter">
+            <param name="LevelMin" value="DEBUG"/>
+            <param name="LevelMax" value="ERROR"/>
+        </filter>
+    </appender>
+    <!--trace日志-->
+    <appender name="TRACE_LOGGER" class="org.apache.log4j.DailyRollingFileAppender">
+        <param name="File" value="${webapp.root}/logs2/trace/trace.log"/>
+        <param name="DatePattern" value="'.'yyyy-MM-dd-HH"/>
+        <param name="encoding" value="utf-8"/>
+        <layout class="org.apache.log4j.PatternLayout"/>
+        <!--40100为trace日志,40050为biz日志-->
+        <filter class="org.apache.log4j.varia.LevelRangeFilter">
+            <param name="LevelMin" value="40100"/>
+            <param name="LevelMax" value="40100"/>
+        </filter>
+    </appender>
+
+    <!-- biz 配置 -->
+    <appender name="BIZ_LOGGER" class="org.apache.log4j.DailyRollingFileAppender">
+        <param name="File" value="${webapp.root}/logs2/trace/biz.log" /><!-- 设置日志输出文件名 -->
+        <param name="DatePattern" value="'.'yyyy-MM-dd-HH"/>
+        <param name="encoding" value="utf-8"/>
+        <layout class="org.apache.log4j.PatternLayout"/>
+        <filter class="org.apache.log4j.varia.LevelRangeFilter">
+            <param name="LevelMin" value="40050" />
+            <param name="LevelMax" value="40050" />
+        </filter>
+    </appender>
+
+    <!--SQL配置-->
+    <logger name="trace.sql" additivity="false">
+        <level value="DEBUG"/>
+        <appender-ref ref="TRACE_SQL_LOGGER"/>
+    </logger>
+
+    <!--trace配置-->
+    <logger name="trace" additivity="false">
+        <appender-ref ref="TRACE_LOGGER"/>
+    </logger>
+
+    <!--
+       * 1. 一个appender子元素定义一个日志输出目的地
+       * 2. 一个logger子元素定义一个日志写出器
+    -->
+    <appender name="consoleAppend" class="org.apache.log4j.ConsoleAppender" >
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%-d{HH:mm:ss} [%5p][%t]--- %m%n" />
+        </layout>
+    </appender>
+
+    <!-- SQL语句 start -->
+    <logger name="java.sql.PreparedStatement" additivity="false">
+        <level value="DEBUG" />
+        <appender-ref ref="consoleAppend" />
+    </logger>
+    <logger name="java.sql.Connection" additivity="false">
+        <level value="DEBUG" />
+        <appender-ref ref="consoleAppend" />
+    </logger>
+    <logger name="com.ibatis" additivity="false">
+        <level value="DEBUG" />
+        <appender-ref ref="consoleAppend" />
+    </logger>
+    <!-- SQL语句 start -->
+
+	<root>
+		<priority value="INFO" />
+		<appender-ref ref="consoleAppend" />
+        <appender-ref ref="biz_appender" />
+        <appender-ref ref="info_appender" />
+        <appender-ref ref="error_appender" />
+        <!-- 添加一个错误日志的配置,错误日志的JSON格式输出实现 -->
+        <appender-ref ref="TRACE_ERROR_LOGGER"/>
+        <appender-ref ref="handleExceptionUtilAppend"/>
+	</root>
+
+</log4j:configuration>

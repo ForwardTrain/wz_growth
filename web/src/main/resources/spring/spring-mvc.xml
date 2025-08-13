@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="
+       http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/context
+       http://www.springframework.org/schema/context/spring-context.xsd
+       http://www.springframework.org/schema/mvc
+       http://www.springframework.org/schema/mvc/spring-mvc.xsd
+">
+    <context:component-scan base-package="com.school.wz_growth.web.controller">
+    </context:component-scan>
+    <mvc:resources mapping="/uploads/**" location="/uploads/" />
+    <mvc:resources mapping="/downloads/**" location="/downloads/" />
+    <mvc:resources mapping="/druid/**" location="/druid/" />
+    <!--<mvc:cors>-->
+        <!--&lt;!&ndash;实现跨域的配置代码&ndash;&gt;-->
+        <!--<mvc:mapping path="/**"-->
+                     <!--allowed-origins="http://172.22.36.190:8089,http://192.168.7.22:8089"-->
+                     <!--allowed-methods="POST,GET,OPTIONS,DELETE,PUT"-->
+                     <!--allowed-headers="Content-Type,ContentType,Access-Control-Allow-Headers, Authorization, X-Requested-With"-->
+                     <!--allow-credentials="false"/>-->
+    <!--</mvc:cors>-->
+    <!--<mvc:cors>-->
+
+        <!--<mvc:mapping allow-credentials="true" allowed-headers="Content-Type,ContentType,Access-Control-Allow-Headers, Authorization, X-Requested-With"-->
+                     <!--allowed-methods="POST, GET, OPTIONS, DELETE, PUT, HEAD"-->
+                     <!--allowed-origins="http://172.22.36.190:8089,http://192.168.7.22:8089"-->
+                     <!--max-age="3600" path="/**"/>-->
+        <!---->
+        <!---->
+        <!---->
+    <mvc:interceptors>
+        <mvc:interceptor>
+            <mvc:mapping path="/**" />
+            <bean class="com.school.wz_growth.common.filter.HeaderTokenInterceptor"/>
+        </mvc:interceptor>
+    </mvc:interceptors>
+    <!--&lt;!&ndash;</mvc:cors>&ndash;&gt;-->
+    <!--<mvc:interceptors>-->
+        <!--<mvc:interceptor>-->
+            <!--<mvc:mapping path="/**"/>-->
+            <!--<bean class="com.zjhn.market.model.filter.HeaderTokenInterceptor"/>-->
+        <!--</mvc:interceptor>-->
+    <!--</mvc:interceptors>-->
+
+    <!--<mvc:cors>-->
+        <!--<mvc:mapping path="/**" allow-credentials="true" allowed-methods="*" allowed-headers="*" allowed-origins="*"/>-->
+    <!--</mvc:cors>-->
+    <!--<mvc:cors>-->
+        <!--<mvc:mapping path="/**"-->
+                     <!--allowed-origins="*"-->
+                     <!--allowed-methods="POST, GET, OPTIONS, DELETE, PUT"-->
+                     <!--allowed-headers="Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With"-->
+                     <!--allow-credentials="true"-->
+                     <!--max-age="3600" />-->
+    <!--</mvc:cors>-->
+
+
+    <!-- Only needed because we require fileupload in the org.springframework.samples.mvc.fileupload package -->
+    <!-- 多部分文件上传 -->
+    <bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+        <property name="defaultEncoding" value="utf-8"></property>
+        <property name="maxUploadSize" value="10485760000"></property>
+        <!--<property name="maxInMemorySize" value="40960"></property>-->
+    </bean>
+
+    <bean class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">
+        <property name="defaultErrorView" value="exception"/>
+        <!-- results into 'WEB-INF/thymeleaf/exception.html' -->
+        <property name="warnLogCategory" value="warn"/>
+        <!-- needed otherwise exceptions won't be logged anywhere -->
+    </bean>
+    <!-- 既然已经和Spring3集成了且在POM中导入了Spring3Thymeleaf的依赖包，最好是用Spring3的Resolver modified by -->
+    <bean id="templateResolver"
+          class="org.thymeleaf.spring3.templateresolver.SpringResourceTemplateResolver"><!-- "org.thymeleaf.templateresolver.ServletContextTemplateResolver" -->
+        <property name="prefix" value="/WEB-INF/html/" />
+        <property name="suffix" value=".html" />
+        <property name="templateMode" value="HTML" />
+        <!-- Template cache is set to false (default is true).        -->
+        <property name="cacheable" value="false" />
+        <property name="characterEncoding" value="UTF-8"/>
+    </bean>
+
+    <bean id="templateEngine" class="org.thymeleaf.spring3.SpringTemplateEngine">
+        <property name="templateResolver" ref="templateResolver" />
+    </bean>
+
+    <bean class="org.thymeleaf.spring3.view.ThymeleafViewResolver">
+        <property name="templateEngine" ref="templateEngine" />
+        <!-- 设置response的charset -->
+        <property name="characterEncoding" value="UTF-8" />
+    </bean>
+
+    <bean id="objectMapper" class="org.springframework.http.converter.json.Jackson2ObjectMapperFactoryBean" />
+
+    <mvc:annotation-driven ><!--validator="validator"-->
+        <mvc:message-converters register-defaults="false"><!---->
+            <bean class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter">
+                <property name="objectMapper" ref="objectMapper"/>
+            </bean>
+            <bean id="fastJsonHttpMessageConverter"
+                  class="com.alibaba.fastjson.support.spring.FastJsonHttpMessageConverter">
+                <!-- 避免IE执行AJAX时,返回JSON出现下载文件 -->
+               <property name="supportedMediaTypes">
+                    <list>
+                        <value>application/xml;charset=UTF-8</value>
+                        <value>text/html;charset=UTF-8</value>
+                        <value>application/json;charset=UTF-8</value>
+                    </list>
+                </property>
+                <property name="features">
+                    <!--自己配置一些东西，比如时间的格式化，null输出""等等-->
+                    <list>
+                        <!--<value>WriteMapNullValue</value>-->
+                        <value>QuoteFieldNames</value>
+                    </list>
+                </property>
+            </bean>
+        </mvc:message-converters>
+    </mvc:annotation-driven>
+
+
+
+    <!--1、首先检查路径扩展名（如my.pdf）；2、其次检查Parameter（如my?format=pdf）；3、检查Accept Header-->
+    <bean id="contentNegotiationManager" class="org.springframework.web.accept.ContentNegotiationManagerFactoryBean">
+        <!-- 扩展名至mimeType的映射,即 /user.json => /json -->
+        <property name="favorPathExtension" value="true"/>
+        <!-- 用于开启 /userinfo/123?format=json 的支持 -->
+        <property name="favorParameter" value="true"/>
+        <property name="parameterName" value="format"/>
+        <!-- 是否忽略Accept Header -->
+        <property name="ignoreAcceptHeader" value="false"/>
+
+        <property name="mediaTypes"> <!--扩展名到MIME的映射；favorPathExtension, favorParameter是true时起作用  -->
+            <map>
+                <entry key="xml" value="application/xml"/>
+                <entry key="json" value="text/plain"/>
+                <entry key="xls" value="application/vnd.ms-excel"/>
+                <entry key="xlsx" value="application/vnd.ms-excel"/>
+            </map>
+        </property>
+        <!-- 默认的content type -->
+        <property name="defaultContentType" value="text/html"/>
+    </bean>
+
+    <!-- ========================= VIEW定义 ========================= -->
+    <!-- 内容协商视图解析器；根据客户端的不同的请求决定不同的 view进行响应, 如 /blog/1.json /blog/1.xml -->
+    <!-- 会自动根据解析的contentType来决定使用哪个视图解析器（默认使用整个web应用中的viewResolver） -->
+    <bean class="org.springframework.web.servlet.view.ContentNegotiatingViewResolver">
+        <!-- 内容协商管理器 用于决定media type -->
+        <property name="contentNegotiationManager" ref="contentNegotiationManager"/>
+        <!-- 默认视图 放在解析链最后 -->
+        <property name="defaultViews">
+            <list>
+                <bean class="com.alibaba.fastjson.support.spring.FastJsonJsonView"/>
+            </list>
+        </property>
+    </bean>
+
+
+
+</beans>
+
+
+
+
+
+
+

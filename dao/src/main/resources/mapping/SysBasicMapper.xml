@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.school.wz_growth.dao.SysBasicMapper">
+    <select id="selSysBasic" parameterType="java.util.Map" resultType="java.util.Map">
+        SELECT
+            *
+        FROM
+            sys_basic
+           limit 1
+    </select>
+
+    <insert id="insertSysBasic" parameterType="java.util.Map">
+        INSERT INTO `sys_admin`
+        ( `user_name`, `psd`, `status`, `create_time`, `modify_time`, `name`, `tel`, `role_ids`, `job_ids`, `operator` )
+        VALUES
+            (#{user_name},#{psd},#{status},now(),now(),#{name},#{tel},#{role_ids},#{job_ids},#{operator})
+    </insert>
+    <update id="updateSysBasic" parameterType="java.util.Map">
+        UPDATE sys_basic
+        <set>
+            modify_time=now()
+            <if test="or_name != null and or_name != ''">
+                ,or_name=#{or_name}
+            </if>
+            <if test="e_name != null and e_name != ''">
+                ,e_name=#{e_name}
+            </if>
+
+            <if test="sys_name != null and sys_name != ''">
+                ,sys_name=#{sys_name}
+            </if>
+            <if test="org_name != null and org_name != ''">
+                ,org_name=#{org_name}
+            </if>
+
+            <if test="introduction_brief != null and introduction_brief != ''">
+                ,introduction_brief=#{introduction_brief}
+            </if>
+            <if test="email != null and email != ''">
+                ,email=#{email}
+            </if>
+            <if test="customer_service_tel != null and customer_service_tel != ''">
+                ,customer_service_tel=#{customer_service_tel}
+            </if>
+            <if test="customer_service_time != null and customer_service_time != ''">
+                ,customer_service_time=#{customer_service_time}
+            </if>
+
+            <if test="p_code != null and p_code != ''">
+                ,p_code=#{p_code}
+            </if>
+            <if test="c_code != null and c_code != ''">
+                ,c_code=#{c_code}
+            </if>
+            <if test="a_code != null and a_code != ''">
+                ,a_code=#{a_code}
+            </if>
+            <if test="address != null and address != ''">
+                ,address=#{address}
+            </if>
+
+            <if test="operate_user != null and operate_user != ''">
+                ,operate_user=#{operate_user}
+            </if>
+            <if test="logo != null and logo != ''">
+                ,logo=#{logo}
+            </if>
+            <if test="detail_brief != null and detail_brief != ''">
+                ,detail_brief=#{detail_brief}
+            </if>
+            ,notice_content=#{notice_content}
+        </set>
+        WHERE
+        `id`>0
+    </update>
+
+    <select id="sel_sys_params_list" resultType="map">
+        SELECT * FROM sys_params
+    </select>
+    <update id="update_sys_params" parameterType="map">
+        UPDATE sys_params
+        <set>
+            <if test="value != null and value != ''">
+                `value`=#{value},
+            </if>
+            <if test="desc != null and desc != ''">
+                `desc`=#{desc},
+            </if>
+            modify_time=NOW()
+        </set>
+        where `id`=#{id}
+    </update>
+
+</mapper>

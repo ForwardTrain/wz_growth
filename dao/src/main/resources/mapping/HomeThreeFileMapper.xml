@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.school.wz_growth.dao.HomeThreeFileMapper">
+
+    <select id="sel_GM_list" parameterType="map" resultType="map">
+        SELECT
+        main.*,--         (SELECT GROUP_CONCAT( str  order by `index` ASC  SEPARATOR ' ; ') FROM GM_main_mesh WHERE main_id=main.id) as `mesh`
+
+        CONCAT('https://pubmed.ncbi.nlm.nih.gov/',main.PMID,'/') PMID_url,
+        IF(main.identities_doi is null OR main.identities_doi='','',CONCAT('https://www.tandfonline.com/doi/abs/',main.identities_doi)) identities_doi_url,
+        (SELECT GROUP_CONCAT(fullName SEPARATOR ' ; ') FROM GM_main_authors WHERE main_id=main.id) as `authors`
+--         (SELECT GROUP_CONCAT( str  order by `index` ASC  SEPARATOR ' ; ') FROM GM_main_mesh WHERE main_id=main.id) as `mesh`
+        FROM
+        GM_main main
+        <where>
+            1=1
+            <if test="title != null and title != ''">
+                AND main.article_title REGEXP #{title}
+            </if>
+        </where>
+        ORDER BY  id  ASC
+        LIMIT #{page_index},#{page_size}
+    </select>
+    <select id="sel_GM_list_count" parameterType="map" resultType="int">
+        SELECT COUNT(id)  FROM GM_main
+        <where>
+            1=1
+            <if test="title!=null and title!=''">
+                and article_title REGEXP #{title}
+            </if>
+        </where>
+    </select>
+    <select id="sel_GM_brief_list" parameterType="map" resultType="map">
+        SELECT * FROM GM_main_article WHERE main_id=#{id} ORDER BY `index` ASC
+    </select>
+
+    <select id="sel_CT_list" parameterType="map" resultType="map">
+        SELECT  *  FROM CT_main
+        <where>
+            1=1
+            <if test="title!=null and title!=''">
+                and briefTitle REGEXP #{title}
+            </if>
+            <if test="phases!=null and phases!=''">
+                and phases REGEXP #{phases}
+            </if>
+            <if test="overallStatus!=null and overallStatus!=''">
+                and overallStatus REGEXP #{overallStatus}
+            </if>
+        </where>
+        <choose>
+            <when test="sortOrder != null and sortOrder == 'desc'">
+                ORDER BY nct_number DESC
+            </when>
+            <otherwise>
+                ORDER BY nct_number ASC
+            </otherwise>
+        </choose>
+            LIMIT #{page_index},#{page_size}
+    </select>
+
+
+    <select id="sel_CT_list_export" parameterType="map" resultType="map">
+        SELECT  *  FROM CT_main
+        where id in
+        <foreach item="id" collection="list" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
+
+    <select id="sel_CT_list_count" parameterType="map" resultType="int">
+        SELECT COUNT(id)  FROM CT_main
+        <where>
+            1=1
+            <if test="title!=null and title!=''">
+                and briefTitle REGEXP #{title}
+            </if>
+            <if test="phases!=null and phases!=''">
+                and phases REGEXP #{phases}
+            </if>
+            <if test="overallStatus!=null and overallStatus!=''">
+                and overallStatus REGEXP #{overallStatus}
+            </if>
+        </where>
+    </select>
+    <select id="sel_CT_list_detail" parameterType="map" resultType="map">
+        SELECT
+            main.briefTitle,
+            main.overallStatus,
+            main.nct_number,
+
+            main.leadSponsor as sponsor,
+            detail.last_update_posted,
+
+            detail.brief_summary,
+            detail.detailed_description,
+            detail.official_title,
+            detail.conditions,
+
+            detail.information_provided_by,
+            detail.intervention_treatment,
+            detail.other_study_id_numbers
+
+        FROM
+            CT_main main
+                LEFT JOIN CT_main_detail detail ON detail.main_id = main.id
+        WHERE
+            main.id = #{id}
+    </select>
+
+
+    <select id="sel_TL_list" parameterType="map" resultType="map">
+        SELECT
+        main.*,
+        detail.abstract,
+        detail.inventor
+        FROM
+        TL_main main
+        LEFT JOIN TL_main_detail detail ON detail.main_id=main.id
+        <where>
+            <if test="title!=null and title!=''">
+                main.title REGEXP #{title}
+            </if>
+        </where>
+        <choose>
+            <when test="sortOrder != null and sortOrder == 'desc'">
+                ORDER BY date_published DESC
+            </when>
+            <otherwise>
+                ORDER BY date_published ASC
+            </otherwise>
+        </choose>
+        LIMIT #{page_index},#{page_size}
+    </select>
+
+    <select id="sel_TL_list_export" parameterType="map" resultType="map">
+
+        SELECT
+        main.*,
+        detail.abstract,
+        detail.inventor
+        FROM
+        TL_main main
+        LEFT JOIN TL_main_detail detail ON detail.main_id=main.id
+        <where>
+            <if test="title!=null and title!=''">
+                main.title REGEXP #{title}
+            </if>
+        </where>
+        <choose>
+            <when test="limitNum != null and limitNum != ''">
+                LIMIT #{limitNum}
+            </when>
+            <otherwise>
+                LIMIT 10
+            </otherwise>
+        </choose>
+    </select>
+
+
+    <select id="sel_TL_list_count" parameterType="map" resultType="int">
+        SELECT COUNT(id)  FROM TL_main
+        <where>
+            1=1
+            <if test="title!=null and title!=''">
+                and title REGEXP #{title}
+            </if>
+        </where>
+    </select>
+
+    <select id="sel_CT_disease_types" resultType="string">
+        SELECT DISTINCT phases FROM CT_main
+        WHERE phases is not NULL AND phases NOT REGEXP '\\|' AND phases !='NA'
+        ORDER BY phases ASC
+    </select>
+    <select id="sel_CT_other_disease" resultType="string">
+        SELECT DISTINCT overallStatus FROM CT_main WHERE overallStatus is not NULL
+    </select>
+
+
+</mapper>

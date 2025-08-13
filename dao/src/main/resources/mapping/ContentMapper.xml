@@ -1,0 +1,898 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.school.wz_growth.dao.ContentMapper">
+
+<select id="sel_list" parameterType="com.alibaba.fastjson.JSONObject" resultType="com.alibaba.fastjson.JSONObject">
+  select
+  a.id,
+  a.name,
+    CONCAT(#{qiniu_base_url},a.img) as img,
+    concat(b.name,'|',ifnull(c.name,'')) item_name,
+    a.is_push,
+    a.status,
+    a.brief,
+  date_format(a.publish_time,'%Y-%m-%d %H:%i:%s') publish_time
+  from sys_content a
+    left join sys_item b on b.id=a.item_id
+    left join sys_item c on c.id=b.p_id
+  where 1=1
+  <if test="status != null and status != ''">
+    and a.status = #{status}
+  </if>
+  <if test="type != null and type != ''">
+    and a.type = #{type}
+  </if>
+  <if test="name != null and name != ''">
+    and a.name regexp #{name}
+  </if>
+  <if test="item_name != null and item_name != ''">
+    and (b.name regexp #{item_name} or c.name regexp #{item_name})
+  </if>
+  limit ${start},${limit}
+</select>
+<select id="sel_list_total" parameterType="com.alibaba.fastjson.JSONObject" resultType="int">
+  select
+  count(1)
+    from sys_content a
+    left join sys_item b on b.id=a.item_id
+    left join sys_item c on c.id=b.p_id
+    where 1=1
+    <if test="status != null and status != ''">
+        and a.status = #{status}
+    </if>
+    <if test="type != null and type != ''">
+        and a.type = #{type}
+    </if>
+    <if test="name != null and name != ''">
+        and a.name regexp #{name}
+    </if>
+    <if test="item_name != null and item_name != ''">
+        and (b.name regexp #{item_name} or c.name regexp #{item_name})
+    </if>
+</select>
+<select id="sel_list_details" parameterType="com.alibaba.fastjson.JSONObject"
+        resultType="com.alibaba.fastjson.JSONObject">
+  select
+    *
+    from sys_content
+where id=#{id}
+
+</select>
+<select id="sel_file_list" parameterType="com.alibaba.fastjson.JSONObject"
+        resultType="com.alibaba.fastjson.JSONObject">
+  select
+    *
+    from sys_content_file
+where p_id=#{id}
+
+</select>
+
+    <delete id="del_list"  parameterType="com.alibaba.fastjson.JSONObject">
+        delete from  sys_content
+        where id in (${ids});
+        delete from sys_content_file
+        where p_id in (${ids});
+    </delete>
+
+
+    <insert id="add_list"  parameterType="com.alibaba.fastjson.JSONObject" useGeneratedKeys="true" keyProperty="id">
+        insert into sys_content(
+        <if test="name != null and name != ''">
+            name,
+        </if>
+        <if test="source != null and source != ''">
+            source,
+        </if>
+        <if test="source_url != null and source_url != ''">
+            source_url,
+        </if>
+        <if test="is_push != null and is_push != ''">
+            is_push,
+        </if>
+        <if test="img != null and img != ''">
+            img,
+        </if>
+        <if test="publish_type != null and publish_type != ''">
+            publish_type,
+        </if>
+
+        <if test="publish_type != null and publish_type != '' and push_type=2">
+            publish_time,
+        </if>
+
+        <if test="brief != null and brief != ''">
+            brief,
+        </if>
+        <if test="content != null and content != ''">
+            content,
+        </if>
+        <if test="operator != null and operator != ''">
+            operator,
+        </if>
+        <if test="status != null and status != ''">
+            status,
+        </if>
+        <if test="item_id != null and item_id != ''">
+            item_id,
+        </if>
+        <if test="type != null and type != ''">
+            type,
+        </if>
+        create_time
+        )values(
+        <if test="name != null and name != ''">
+            #{name},
+        </if>
+        <if test="source != null and source != ''">
+            #{source},
+        </if>
+        <if test="source_url != null and source_url != ''">
+            #{source_url},
+        </if>
+        <if test="is_push != null and is_push != ''">
+            #{is_push},
+        </if>
+        <if test="img != null and img != ''">
+            #{img},
+        </if>
+        <if test="publish_type != null and publish_type != ''">
+            #{publish_type},
+        </if>
+
+        <if test="publish_type != null and publish_type != '' and push_type=2">
+            date_format(now(),'%Y-%m-%d %H:%i:%s'),
+        </if>
+
+        <if test="brief != null and brief != ''">
+            #{brief},
+        </if>
+        <if test="content != null and content != ''">
+            #{content},
+        </if>
+        <if test="operator != null and operator != ''">
+            #{operator},
+        </if>
+        <if test="status != null and status != ''">
+            #{status},
+        </if>
+        <if test="item_id != null and item_id != ''">
+            #{item_id},
+        </if>
+        <if test="type != null and type != ''">
+            #{type},
+        </if>
+        now()
+        )
+    </insert>
+
+    <update id="upd_list"  parameterType="map">
+        update  sys_content
+        set
+        <if test="name != null and name != ''">
+            name=#{name},
+        </if>
+        <if test="source != null and source != ''">
+            source=#{source},
+        </if>
+        <if test="source_url != null and source_url != ''">
+            source_url=#{source_url},
+        </if>
+        <if test="is_push != null and is_push != ''">
+            is_push=#{is_push},
+        </if>
+        <if test="img != null and img != ''">
+            img=#{img},
+        </if>
+        <if test="publish_type != null and publish_type != ''">
+            publish_type=#{publish_type},
+        </if>
+        <if test="publish_time != null and publish_time != ''">
+            publish_time=#{publish_time},
+        </if>
+        <if test="brief != null and brief != ''">
+            brief=#{brief},
+        </if>
+        <if test="content != null and content != ''">
+            content=#{content},
+        </if>
+        <if test="operator != null and operator != ''">
+            operator=#{operator},
+        </if>
+        <if test="status != null and status != ''">
+            status=#{status},
+        </if>
+        <if test="status != null and status != '' and status==5">
+            publish_time=date_format(now(),'%Y-%m-%d %H:%i:%s'),
+        </if>
+        <if test="item_id != null and item_id != ''">
+            item_id=#{item_id},
+        </if>
+        <if test="type != null and type != ''">
+            type=#{type},
+        </if>
+        modify_time=now()
+       where id=#{id}
+
+    </update>
+
+    <delete id="del_file" parameterType="com.alibaba.fastjson.JSONObject">
+        delete from sys_content_file
+        where p_id=#{id}
+    </delete>
+    <insert id="add_file" parameterType="com.alibaba.fastjson.JSONObject">
+        insert into sys_content_file(p_id,url.operator,create_time,name)
+        values
+        <foreach collection="list" separator="," item="i">
+            (#{i.p_id},#{i.url},#{i.operator},now(),#{i.name)
+        </foreach>
+    </insert>
+
+
+    <select id="sel_support_list" parameterType="com.alibaba.fastjson.JSONObject"
+            resultType="com.alibaba.fastjson.JSONObject">
+        select
+        a.id,
+        a.type,
+        a.title,
+        a.is_show,
+        a.operator,
+        a.tel,
+        a.email,
+        date_format(a.create_time,'%Y-%m-%d %H:%i:%s') create_time,
+        b.operator r_operator,
+        date_format(b.create_time,'%Y-%m-%d %H:%i:%s') r_create_time
+        from support_main a
+        left join support_report b on b.p_id=a.id
+        where 1=1
+        <if test="title != null and title != ''">
+            and a.title regexp #{title}
+        </if>
+        <if test="tel != null and tel != ''">
+            and a.tel regexp #{tel}
+        </if>
+        <if test="operator != null and operator != ''">
+            and a.operator regexp #{operator}
+        </if>
+        <if test="is_show != null and is_show != ''">
+            and a.is_show = #{is_show}
+        </if>
+        limit ${start},${limit}
+    </select>
+    <select id="sel_support_list_total" parameterType="com.alibaba.fastjson.JSONObject"
+            resultType="int">
+        select
+        count(1)
+        from support_main a
+        left join support_report b on b.p_id=a.id
+        where 1=1
+        <if test="title != null and title != ''">
+            and a.title regexp #{title}
+        </if>
+        <if test="tel != null and tel != ''">
+            and a.tel regexp #{tel}
+        </if>
+        <if test="operator != null and operator != ''">
+            and a.operator regexp #{operator}
+        </if>
+        <if test="is_show != null and is_show != ''">
+            and a.is_show = #{is_show}
+        </if>
+    </select>
+
+    <select id="sel_support_list_support" parameterType="com.alibaba.fastjson.JSONObject"
+            resultType="com.alibaba.fastjson.JSONObject">
+        select
+        * from support_main
+        where id=#{id}
+    </select>
+    <select id="sel_support_list_report" parameterType="com.alibaba.fastjson.JSONObject"
+            resultType="com.alibaba.fastjson.JSONObject">
+        select
+        * from support_report
+        where p_id=#{id}
+    </select>
+
+    <delete id="del_support_list" parameterType="com.alibaba.fastjson.JSONObject">
+    delete from support_main where id in (${ids});
+    delete from support_report where p_id in (${ids});
+    </delete>
+
+    <insert id="add_upd_support" parameterType="com.alibaba.fastjson.JSONObject">
+        insert into support_main(
+        name,
+        sex,
+        tel,
+        email,
+        type,
+        is_show,
+        title,
+        content,
+        operator,
+        create_time
+        )values(
+        #{name},
+        #{sex},
+        #{ tel},
+         #{email},
+         #{type},
+         #{is_show},
+         #{title},
+         #{content},
+         #{operator},
+        now()
+        )
+    </insert>
+    <insert id="add_example" parameterType="com.alibaba.fastjson.JSONObject">
+        insert into search_word(name,operator,create_time,is_example)
+        values(#{name},#{u_name},now(),1)
+    </insert>
+    <update id="upd_example" parameterType="com.alibaba.fastjson.JSONObject">
+        update search_word
+        set name=#{name}
+        where id=#{id}
+    </update>
+    <delete id="del_example" parameterType="com.alibaba.fastjson.JSONObject">
+        delete from search_word
+
+        where id in (${ids}})
+    </delete>
+
+    <insert id="add_report" parameterType="com.alibaba.fastjson.JSONObject">
+        insert into support_report(p_id,name,content,
+        <if test="status != null and status != ''">
+            status,
+        </if>
+        operator,
+        create_time
+        )values(
+        #{p_id},#{name},#{content},
+        <if test="status != null and status != ''">
+            #{status},
+        </if>
+        #{operator},
+        now()
+        )
+    </insert>
+    <update id="upd_report" parameterType="com.alibaba.fastjson.JSONObject">
+        update support_report
+        set
+        <if test="name != null and name != ''">
+            name=#{name},
+        </if>
+        <if test="content != null and content != ''">
+            content=#{content},
+        </if>
+        <if test="status != null and status != ''">
+            status=#{status},
+        </if>
+        <if test="operator != null and operator != ''">
+            operator=#{operator},
+        </if>
+        modify_time=now()
+        where id=#{id}
+    </update>
+
+
+    <select id="sel_example" parameterType="com.alibaba.fastjson.JSONObject" resultType="com.alibaba.fastjson.JSONObject">
+        select
+       id,name
+        from search_word
+        where 1=1 and is_example=1
+        limit ${start},${limit}
+    </select>
+    <select id="sel_example_total" parameterType="com.alibaba.fastjson.JSONObject"
+            resultType="int">
+        select
+       count(1)
+        from search_word
+        where 1=1 and is_example=1
+    </select>
+    <select id="sel_hot_list" parameterType="com.alibaba.fastjson.JSONObject" resultType="com.alibaba.fastjson.JSONObject">
+        select
+        a.id,a.brief,
+        a.name,
+        a.img,
+        concat(b.name,'|',ifnull(c.name,'')) item_name,
+        a.is_push,
+        a.status,
+        date_format(a.publish_time,'%Y-%m-%d %H:%i:%s') publish_time,
+        a.type
+        from sys_content a
+        left join sys_item b on b.id=a.item_id
+        left join sys_item c on c.id=b.p_id
+        where 1=1 and a.type = 1
+<!--        <if test="type != null and type != '' and type != '3'">-->
+<!--            and a.type = #{type}-->
+<!--        </if>-->
+        <if test="is_home_hot!=null and is_home_hot!='' and is_home_hot=='1'">
+            and a.is_push='1'
+        </if>
+        <if test="name != null and name != ''">
+            and a.name regexp #{name}
+        </if>
+        <if test="item_name != null and item_name != ''">
+            and (b.name regexp #{item_name} or c.name regexp #{item_name})
+        </if>
+        order by a.is_push desc, a.sort asc, a.id desc
+        limit ${start},${limit}
+    </select>
+    <select id="sel_hot_list_total" parameterType="com.alibaba.fastjson.JSONObject"
+            resultType="int">
+        select
+        count(1)
+        from sys_content a
+        left join sys_item b on b.id=a.item_id
+        left join sys_item c on c.id=b.p_id
+        where 1=1 and a.type = 1
+        <!--        <if test="type != null and type != '' and type != '3'">-->
+        <!--            and a.type = #{type}-->
+        <!--        </if>-->
+        <if test="is_home_hot!=null and is_home_hot!='' and is_home_hot=='1'">
+            and a.is_push='1'
+        </if>
+        <if test="name != null and name != ''">
+            and a.name regexp #{name}
+        </if>
+        <if test="item_name != null and item_name != ''">
+            and (b.name regexp #{item_name} or c.name regexp #{item_name})
+        </if>
+    </select>
+
+    <select id="sel_item_list" parameterType="com.alibaba.fastjson.JSONObject" resultType="com.alibaba.fastjson.JSONObject">
+        select
+        a.id,
+        a.name
+        from sys_item a
+        where 1=1
+            and a.left_show = 1
+        <if test="type != null and type != ''">
+            and a.type = #{type}
+        </if>
+        and a.is_del=2 and p_id=0
+    </select>
+    <select id="sel_item_children" parameterType="com.alibaba.fastjson.JSONObject" resultType="com.alibaba.fastjson.JSONObject">
+        select
+        a.id,
+        a.name
+        from sys_item a
+        where 1=1
+            and a.left_show = 1
+        and a.is_del=2 and p_id=#{id}
+    </select>
+    <select id="clinical_research" parameterType="com.alibaba.fastjson.JSONObject" resultType="com.alibaba.fastjson.JSONObject">
+        select
+       *
+        from ct_main
+        where 1=1
+        <if test="keywords != null and keywords != '' ">
+            and briefTitle regexp #{keywords}
+        </if>
+        order by id desc
+        limit ${start},${limit}
+    </select>
+    <select id="clinical_research_total" parameterType="com.alibaba.fastjson.JSONObject"
+            resultType="int">
+        select
+        count(1)
+        from ct_main
+        where 1=1
+        <if test="keywords != null and keywords != '' ">
+            and briefTitle regexp #{keywords}
+        </if>
+    </select>
+
+    <update id="upd_hot_list" parameterType="com.alibaba.fastjson.JSONObject">
+        <if test="is_push==1">
+            update sys_content set sort=sort+1 where sort is not null;
+            update sys_content set sort=1, is_push=1 where id=#{id};
+        </if>
+        <if test="is_push==2">
+            update sys_content set sort=sort-1 where sort is not null AND sort &gt; (SELECT IFNULL(sort, 0) FROM sys_content WHERE id = #{id});
+            update sys_content set sort=null, is_push=NULL where id=#{id};
+        </if>
+    </update>
+    <select id="search_combobox" parameterType="map" resultType="com.alibaba.fastjson.JSONObject">
+       select * from search_combobox
+        where p_id=0 and `type` REGEXP #{type}
+    </select>
+    <select id="search_combobox_children" parameterType="com.alibaba.fastjson.JSONObject" resultType="com.alibaba.fastjson.JSONObject">
+       select *, '' as `value` from search_combobox
+        where p_id=#{id}
+    </select>
+
+    <select id="search_combobox_type_num_count" parameterType="map" resultType="map">
+        select * from search_combobox
+        where type LIKE  CONCAT(#{type},'%') and p_id>0
+    </select>
+
+    <insert id="add_down_first" parameterType="com.alibaba.fastjson.JSONObject"
+    useGeneratedKeys="true" keyProperty="id">
+insert into search_combobox(name ,p_id,create_time)
+        values(#{name},0,now())
+    </insert>
+    <insert id="add_down_second" parameterType="com.alibaba.fastjson.JSONObject"
+    >
+insert into search_combobox(name ,p_id,create_time)
+        values
+        <foreach collection="list" item="i" separator=",">
+            (#{i.label},#{i.p_id},now())
+        </foreach>
+    </insert>
+
+
+    <select id="search_result_list" parameterType="map" resultType="map">
+        select
+        a.id, drgf_code.DRGF_code,
+        IFNULL(drgf_code.`name`,a.protein_name) as protein_name,
+        a.gene_names as gene_name,
+        a.gene_also_known_as as gene_names,
+        a.organism,
+        (
+          SELECT
+              GROUP_CONCAT( type.`name`)
+        FROM
+            sys_protein_type_unipro type_unipro
+            LEFT JOIN sys_protein_type type ON type.id = type_unipro.family_id
+        WHERE
+            type_unipro.unipro_entry = a.unipro_entry
+        )as family,
+
+        a.unipro_entry,
+        i.length
+        from
+        base_general_infomation_show a
+        LEFT JOIN sys_protein_DRGF_code drgf_code ON drgf_code.unipro_entry=a.unipro_entry
+        left join base_drgf_show b on b.p_id=a.id
+        left join base_expression_and_location_show c on c.p_id=a.id
+        left join base_family_and_domain_show d on d.p_id=a.id
+        left join base_mutation_and_disease_show e on e.p_id=a.id
+        left join base_post_translational_modification_show f on f.p_id=a.id
+        left join base_protein_function_show g on g.p_id=a.id
+        left join base_protein_interaction_show h on h.p_id=a.id
+        left join base_protein_sequence_show i on i.p_id=a.id
+        left join base_protein_structure_show j on j.p_id=a.id
+        <where>
+            <if test="family_type==4 and keywords!=null and keywords!='' ">
+                AND a.organism REGEXP  #{keywords}
+            </if>
+            <if test="(family_type==1 or family_type==2 or family_type==3)  and keywords!=null and keywords!='' ">
+                AND  	 EXISTS (
+                			   SELECT
+               			         type_unipro.id
+                			   FROM
+                 			  sys_protein_type_unipro type_unipro
+                 			  LEFT JOIN sys_protein_type type ON type.id = type_unipro.family_id
+                 			  WHERE
+                             type_unipro.unipro_entry = a.unipro_entry AND
+                  			 type.`name` REGEXP  #{keywords}
+               			    )
+            </if>
+            <if test="keywords2!=null and keywords2!='' ">
+                AND (
+                a.protein_name REGEXP  #{keywords2} OR
+                drgf_code.`name` REGEXP #{keywords2} OR
+                drgf_code.`DRGF_code` REGEXP #{keywords2} OR
+                a.gene_names REGEXP #{keywords2} OR
+                a.gene_also_known_as REGEXP #{keywords2} OR
+                a.unipro_entry REGEXP #{keywords2} OR
+
+                EXISTS (
+                  SELECT
+                   type_unipro.id
+                FROM
+                   sys_protein_type_unipro type_unipro
+                   LEFT JOIN sys_protein_type type ON type.id = type_unipro.family_id
+                WHERE
+                    type_unipro.unipro_entry = a.unipro_entry AND
+                    type.`name` REGEXP  #{keywords2}
+                  )
+                )
+            </if>
+            <if test="family_id!=null and family_id!='' ">
+                AND (
+
+                EXISTS (
+                  SELECT
+                    type_unipro.id
+                  FROM
+                    sys_protein_type_unipro type_unipro
+                     LEFT JOIN sys_protein_type type ON type.id = type_unipro.family_id
+                  WHERE
+                      type_unipro.unipro_entry = a.unipro_entry AND
+                     type.`id` = #{family_id}
+                   )
+                )
+            </if>
+            <if test="list != null and list.size() > 0">
+                <foreach collection="list" separator="" item="item">
+                    AND ${item.search_value}
+                </foreach>
+            </if>
+        </where>
+        ORDER BY drgf_code.DRGF_code ASC
+        LIMIT #{start},#{limit}
+    </select>
+
+
+<!--    <select id="search_result_list_byId" parameterType="map" resultType="map">-->
+<!--        select-->
+<!--        a.id, drgf_code.DRGF_code,-->
+<!--        IFNULL(drgf_code.`name`,a.protein_name) as protein_name,-->
+<!--        a.gene_names as gene_name,-->
+<!--        a.gene_also_known_as as gene_names,-->
+<!--        a.organism,-->
+<!--        (-->
+<!--        SELECT-->
+<!--        GROUP_CONCAT( type.`name`)-->
+<!--        FROM-->
+<!--        sys_protein_type_unipro type_unipro-->
+<!--        LEFT JOIN sys_protein_type type ON type.id = type_unipro.family_id-->
+<!--        WHERE-->
+<!--        type_unipro.unipro_entry = a.unipro_entry-->
+<!--        )as family,-->
+
+<!--        a.unipro_entry,h.protein_complex,-->
+<!--        i.length-->
+<!--        from-->
+<!--        base_general_infomation_show a-->
+<!--        LEFT JOIN sys_protein_DRGF_code drgf_code ON drgf_code.unipro_entry=a.unipro_entry-->
+<!--        left join base_drgf_show b on b.p_id=a.id-->
+<!--        left join base_expression_and_location_show c on c.p_id=a.id-->
+<!--        left join base_family_and_domain_show d on d.p_id=a.id-->
+<!--        left join base_mutation_and_disease_show e on e.p_id=a.id-->
+<!--        left join base_post_translational_modification_show f on f.p_id=a.id-->
+<!--        left join base_protein_function_show g on g.p_id=a.id-->
+<!--        left join base_protein_interaction_show h on h.p_id=a.id-->
+<!--        left join base_protein_sequence_show i on i.p_id=a.id-->
+<!--        left join base_protein_structure_show j on j.p_id=a.id-->
+<!--        where a.id in-->
+<!--            <foreach item="id" collection="list" open="(" separator="," close=")">-->
+<!--                #{id}-->
+<!--            </foreach>-->
+<!--        ORDER BY drgf_code.DRGF_code ASC-->
+<!--    </select>-->
+
+    <select id="search_result_list_byId" parameterType="map" resultType="map">
+        SELECT
+        info.id,
+        info.protein_name,
+        info.unipro_entry,
+        info.organism,
+        sequence.complete_form,
+        drgf_code.DRGF_code
+        FROM
+        base_general_infomation_show info
+        LEFT JOIN base_protein_sequence_show sequence ON sequence.p_id=info.id
+        LEFT JOIN sys_protein_DRGF_code drgf_code ON drgf_code.unipro_entry=info.unipro_entry
+        WHERE info.id in
+        <foreach item="id" collection="list" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
+
+
+    <select id="select_family_info" parameterType="string" resultType="map">
+        SELECT `name`,`desc`,interPro_accession, IFNULL(CONCAT('https://www.ebi.ac.uk/interpro/entry/InterPro/',interPro_accession),'') family_url FROM sys_protein_type WHERE id=#{id}
+    </select>
+    <select id="search_result_list_total" parameterType="map" resultType="int">
+        select
+          COUNT(a.id)
+        from
+        base_general_infomation_show a
+        LEFT JOIN sys_protein_DRGF_code drgf_code ON drgf_code.unipro_entry=a.unipro_entry
+        left join base_drgf_show b on b.p_id=a.id
+        left join base_expression_and_location_show c on c.p_id=a.id
+        left join base_family_and_domain_show d on d.p_id=a.id
+        left join base_mutation_and_disease_show e on e.p_id=a.id
+        left join base_post_translational_modification_show f on f.p_id=a.id
+        left join base_protein_function_show g on g.p_id=a.id
+        left join base_protein_interaction_show h on h.p_id=a.id
+        left join base_protein_sequence_show i on i.p_id=a.id
+        left join base_protein_structure_show j on j.p_id=a.id
+        <where>
+            1=1
+            <if test="family_type==4 and keywords!=null and keywords!='' ">
+                AND a.organism REGEXP  #{keywords}
+            </if>
+            <if test="(family_type==1 or family_type==2 or family_type==3)  and keywords!=null and keywords!='' ">
+                AND  	 EXISTS (
+                SELECT
+                type_unipro.id
+                FROM
+                sys_protein_type_unipro type_unipro
+                LEFT JOIN sys_protein_type type ON type.id = type_unipro.family_id
+                WHERE
+                type_unipro.unipro_entry = a.unipro_entry AND
+                type.`name` REGEXP  #{keywords}
+                )
+            </if>
+            <if test="keywords2!=null and keywords2!='' ">
+                AND (
+                a.protein_name REGEXP  #{keywords2} OR
+                drgf_code.`name` REGEXP #{keywords2} OR
+
+                a.gene_names REGEXP #{keywords2} OR
+                a.gene_also_known_as REGEXP #{keywords2} OR
+                a.unipro_entry REGEXP #{keywords2} OR
+
+                EXISTS (
+                SELECT
+                type_unipro.id
+                FROM
+                sys_protein_type_unipro type_unipro
+                LEFT JOIN sys_protein_type type ON type.id = type_unipro.family_id
+                WHERE
+                type_unipro.unipro_entry = a.unipro_entry AND
+                type.`name` REGEXP  #{keywords2}
+                )
+                )
+            </if>
+            <if test="family_id!=null and family_id!='' ">
+                AND (
+
+                EXISTS (
+                SELECT
+                type_unipro.id
+                FROM
+                sys_protein_type_unipro type_unipro
+                LEFT JOIN sys_protein_type type ON type.id = type_unipro.family_id
+                WHERE
+                type_unipro.unipro_entry = a.unipro_entry AND
+                type.`id` = #{family_id}
+                )
+                )
+            </if>
+            <foreach collection="list" separator="" item="item">
+                and  ${item.search_value}
+            </foreach>
+        </where>
+    </select>
+    <update id="update_search_combobox_num" parameterType="map">
+        update search_combobox set num=#{num}, modify_time=NOW()  where type=#{type}
+    </update>
+
+    <select id="left_search_result_list" parameterType="com.alibaba.fastjson.JSONObject"
+            resultType="com.alibaba.fastjson.JSONObject">
+        select
+        a.id,
+        unipro_entry,
+        protein_name,
+        gene_names,
+        organism,
+        length,
+        @rownum:=@rownum+1 rownum
+        from base_general_infomation_show a
+        left join base_drgf_show b on b.p_id=a.id
+        left join base_expression_and_location_show c on c.p_id=a.id
+        left join base_family_and_domain_show d on d.p_id=a.id
+        left join base_mutation_and_disease_show e on e.p_id=a.id
+        left join base_post_translational_modification_show f on f.p_id=a.id
+        left join base_protein_function_show g on g.p_id=a.id
+        left join base_protein_interaction_show h on h.p_id=a.id
+        left join base_protein_sequence_show i on i.p_id=a.id
+        left join base_protein_structure_show j on j.p_id=a.id
+        join (select @rownum:=-1) k
+        where 1=1
+        <foreach collection="list" separator=" " item="i">
+            <if test="i.name !=null and i.name !=''">
+                and ${i.name} is not null
+            </if>
+        </foreach>
+    </select>
+    <select id="sel_key_words" resultType="map">
+        select
+            `name`,
+            ((num/(SELECT MAX(num) FROM search_word))*14+12) as font
+        from search_word a
+        where 1=1
+        order by num desc
+
+    </select>
+    <select id="sel_key_words_example"
+            resultType="string">
+        select
+       name
+        from search_word a
+        where is_example=1
+        limit 5
+
+    </select>
+    <select id="sel_lp"
+            resultType="com.alibaba.fastjson.JSONObject">
+        select
+       *
+        from sys_params
+    </select>
+    <select id="sel_databases_brief"  resultType="map">
+        select
+        introduction_brief, detail_brief, notice_content
+        from sys_basic a
+    </select>
+
+    <select id="sys_cooperate_manage_list" parameterType="map" resultType="map">
+        SELECT
+        `id`,
+        `title`,
+        CONCAT(#{qiniu_base_url},`img`) as img,
+        `url`
+        FROM
+        cooperate_manage
+    </select>
+
+    <select id="select_protein_type"
+            parameterType="com.alibaba.fastjson.JSONObject"
+            resultType="com.alibaba.fastjson.JSONObject">
+        select
+       *
+        from sys_protein_type
+    </select>
+
+    <update id="update_protein_type_desc" parameterType="map">
+        update sys_protein_type set `desc`=#{desc} where id=#{id}
+    </update>
+
+
+    <select id="query_example_data"
+            parameterType="com.alibaba.fastjson.JSONObject"
+            resultType="com.alibaba.fastjson.JSONObject">
+        SELECT
+          IFNULL(DRGF_code.`name`,infomation_show.`protein_name`) as `name`,
+          DRGF_code.DRGF_code,
+          DRGF_code.unipro_entry
+        FROM
+          sys_protein_DRGF_code DRGF_code
+        LEFT JOIN base_general_infomation_show  infomation_show ON DRGF_code.unipro_entry =  infomation_show.unipro_entry
+        <where>
+            <if test="name != null and name != ''">
+                and (DRGF_code.`name` regexp #{name} or infomation_show.protein_name regexp #{name})
+            </if>
+            <if test="unipro_entry != null and unipro_entry != ''">
+                and DRGF_code.unipro_entry regexp #{unipro_entry}
+            </if>
+            <if test="DRGF_code != null and DRGF_code != ''">
+                and DRGF_code.DRGF_code regexp #{DRGF_code}
+            </if>
+        </where>
+    </select>
+
+    <insert id="add_example_data" parameterType="com.alibaba.fastjson.JSONObject">
+    INSERT INTO search_example (`name`, unipro_entry)
+    VALUES (#{name}, #{unipro_entry})
+    ON DUPLICATE KEY UPDATE
+        `name` = VALUES(`name`),
+        unipro_entry = VALUES(unipro_entry)
+    </insert>
+
+    <select id="query_protein_data"
+            parameterType="com.alibaba.fastjson.JSONObject"
+            resultType="com.alibaba.fastjson.JSONObject">
+        SELECT
+          infomation_show.id,
+          IFNULL(DRGF_code.`name`,infomation_show.`protein_name`) as `name`,
+          DRGF_code.unipro_entry
+        FROM
+          sys_protein_DRGF_code DRGF_code
+        LEFT JOIN base_general_infomation_show  infomation_show ON DRGF_code.unipro_entry =  infomation_show.unipro_entry
+        <where>
+        <if test="name != null and name != ''">
+            and (DRGF_code.name regexp #{name} or infomation_show.protein_name regexp #{name})
+        </if>
+        <if test="unipro_entry != null and unipro_entry != ''">
+            and DRGF_code.unipro_entry = #{unipro_entry}
+        </if>
+        <if test="DRGF_code != null and DRGF_code != ''">
+            and DRGF_code.DRGF_code regexp #{DRGF_code}
+        </if>
+        </where>
+
+    </select>
+
+    <select id="query_search_example_data" resultType="com.alibaba.fastjson.JSONObject">
+        select * from search_example
+    </select>
+
+    <delete id="del_search_example_data" parameterType="com.alibaba.fastjson.JSONObject">
+        delete from search_example where id = #{id}
+    </delete>
+
+</mapper>

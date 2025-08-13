@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.school.wz_growth.dao.DrugInfoMapper">
+    <!-- 基础列 -->
+    <sql id="Base_Column_List">
+        id, drug_name_cn, drug_name_en, trade_name, dosage_form, specifications, target,
+        active_ingredient, atc, indications, approval_number, approval_date,
+        marketing_authorization_holder, address_of_marketing_authorization_holder,
+        manufacturer, manufacturer_address, listed_country, medical_insurance_classification,
+        medical_insurance_number, usage_scope, oct_prescription_drug
+    </sql>
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.school.wz_growth.dao.model.DrugInfo">
+        <id column="id" property="id" />
+        <result column="drug_name_cn" property="drugNameCn" />
+        <result column="drug_name_en" property="drugNameEn" />
+        <result column="trade_name" property="tradeName" />
+        <result column="dosage_form" property="dosageForm" />
+        <result column="specifications" property="specifications" />
+        <result column="target" property="target" />
+        <result column="active_ingredient" property="activeIngredient" />
+        <result column="atc" property="atc" />
+        <result column="indications" property="indications" />
+        <result column="approval_number" property="approvalNumber" />
+        <result column="approval_date" property="approvalDate" />
+        <result column="marketing_authorization_holder" property="marketingAuthorizationHolder" />
+        <result column="address_of_marketing_authorization_holder" property="addressOfMarketingAuthorizationHolder" />
+        <result column="manufacturer" property="manufacturer" />
+        <result column="manufacturer_address" property="manufacturerAddress" />
+        <result column="listed_country" property="listedCountry" />
+        <result column="medical_insurance_classification" property="medicalInsuranceClassification" />
+        <result column="medical_insurance_number" property="medicalInsuranceNumber" />
+        <result column="usage_scope" property="usageScope" />
+        <result column="oct_prescription_drug" property="octPrescriptionDrug" />
+    </resultMap>
+
+    <!-- 添加药品信息 -->
+    <insert id="insert" parameterType="com.school.wz_growth.dao.model.DrugInfo" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO drug_info (
+            drug_name_cn, drug_name_en, trade_name, dosage_form, specifications, target,
+            active_ingredient, atc, indications, approval_number, approval_date,
+            marketing_authorization_holder, address_of_marketing_authorization_holder,
+            manufacturer, manufacturer_address, listed_country, medical_insurance_classification,
+            medical_insurance_number, usage_scope, oct_prescription_drug
+        ) VALUES (
+            #{drugNameCn}, #{drugNameEn}, #{tradeName}, #{dosageForm}, #{specifications},
+            #{target}, #{activeIngredient}, #{atc}, #{indications}, #{approvalNumber}, #{approvalDate},
+            #{marketingAuthorizationHolder}, #{addressOfMarketingAuthorizationHolder},
+            #{manufacturer}, #{manufacturerAddress}, #{listedCountry}, #{medicalInsuranceClassification},
+            #{medicalInsuranceNumber}, #{usageScope}, #{octPrescriptionDrug}
+        )
+    </insert>
+
+    <!-- 更新药品信息 -->
+    <update id="update" parameterType="com.school.wz_growth.dao.model.DrugInfo">
+        UPDATE drug_info
+        SET
+            drug_name_cn = #{drugNameCn},
+            drug_name_en = #{drugNameEn},
+            trade_name = #{tradeName},
+            dosage_form = #{dosageForm},
+            specifications = #{specifications},
+            target = #{target},
+            active_ingredient = #{activeIngredient},
+            indications = #{indications},
+            approval_number = #{approvalNumber},
+            approval_date = #{approvalDate},
+            marketing_authorization_holder = #{marketingAuthorizationHolder},
+            address_of_marketing_authorization_holder = #{addressOfMarketingAuthorizationHolder},
+            manufacturer = #{manufacturer},
+            manufacturer_address = #{manufacturerAddress},
+            medical_insurance_classification = #{medicalInsuranceClassification},
+            medical_insurance_number = #{medicalInsuranceNumber},
+            usage_scope = #{usageScope},
+            oct_prescription_drug = #{octPrescriptionDrug}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 根据ID查询药品信息 -->
+    <select id="selectById" resultType="com.school.wz_growth.dao.model.DrugInfo" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM drug_info
+        WHERE id = #{id}
+    </select>
+
+    <!-- 分页查询药品信息(可根据药品名称模糊搜索) -->
+    <select id="selectPage" resultType="com.school.wz_growth.dao.model.DrugInfo" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM drug_info
+        <where>
+            1=1
+            <if test="drugName != null and drugName != ''">
+                AND (
+                (drug_name_cn LIKE CONCAT('%', #{drugName}, '%')) OR
+                (drug_name_en LIKE CONCAT('%', #{drugName}, '%'))  OR
+                (trade_name LIKE CONCAT('%', #{drugName}, '%')) OR
+                (dosage_form LIKE CONCAT('%', #{drugName}, '%')) OR
+                (specifications LIKE CONCAT('%', #{drugName}, '%')) OR
+                (target LIKE CONCAT('%', #{drugName}, '%')) OR
+                (active_ingredient LIKE CONCAT('%', #{drugName}, '%')) OR
+                (atc LIKE CONCAT('%', #{drugName}, '%')) OR
+                (indications LIKE CONCAT('%', #{drugName}, '%')) OR
+                (approval_number LIKE CONCAT('%', #{drugName}, '%')) OR
+                (marketing_authorization_holder LIKE CONCAT('%', #{drugName}, '%')) OR
+                (address_of_marketing_authorization_holder LIKE CONCAT('%', #{drugName}, '%')) OR
+                (manufacturer LIKE CONCAT('%', #{drugName}, '%')) OR
+                (manufacturer_address LIKE CONCAT('%', #{drugName}, '%')) OR
+                (listed_country LIKE CONCAT('%', #{drugName}, '%')) OR
+                (medical_insurance_classification LIKE CONCAT('%', #{drugName}, '%')) OR
+                (medical_insurance_number LIKE CONCAT('%', #{drugName}, '%')) OR
+                (usage_scope LIKE CONCAT('%', #{drugName}, '%')) OR
+                (oct_prescription_drug LIKE CONCAT('%', #{drugName}, '%'))
+                )
+            </if>
+        </where>
+        <choose>
+            <when test="sortOrder != null and sortOrder == 'desc'">
+                ORDER BY is_china ASC, IF(approval_date='——','100',approval_date) DESC
+            </when>
+            <otherwise>
+                ORDER BY is_china ASC, IF(approval_date='——','100',approval_date) ASC
+            </otherwise>
+        </choose>
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <!-- 获取符合条件的总记录数 -->
+    <select id="selectCount" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM drug_info
+        <where>
+            1=1
+            <if test="drugName != null and drugName != ''">
+                AND (
+                (drug_name_cn LIKE CONCAT('%', #{drugName}, '%')) OR
+                (drug_name_en LIKE CONCAT('%', #{drugName}, '%'))  OR
+                (trade_name LIKE CONCAT('%', #{drugName}, '%')) OR
+                (dosage_form LIKE CONCAT('%', #{drugName}, '%')) OR
+                (specifications LIKE CONCAT('%', #{drugName}, '%')) OR
+                (target LIKE CONCAT('%', #{drugName}, '%')) OR
+                (active_ingredient LIKE CONCAT('%', #{drugName}, '%')) OR
+                (atc LIKE CONCAT('%', #{drugName}, '%')) OR
+                (indications LIKE CONCAT('%', #{drugName}, '%')) OR
+                (approval_number LIKE CONCAT('%', #{drugName}, '%')) OR
+                (marketing_authorization_holder LIKE CONCAT('%', #{drugName}, '%')) OR
+                (address_of_marketing_authorization_holder LIKE CONCAT('%', #{drugName}, '%')) OR
+                (manufacturer LIKE CONCAT('%', #{drugName}, '%')) OR
+                (manufacturer_address LIKE CONCAT('%', #{drugName}, '%')) OR
+                (listed_country LIKE CONCAT('%', #{drugName}, '%')) OR
+                (medical_insurance_classification LIKE CONCAT('%', #{drugName}, '%')) OR
+                (medical_insurance_number LIKE CONCAT('%', #{drugName}, '%')) OR
+                (usage_scope LIKE CONCAT('%', #{drugName}, '%')) OR
+                (oct_prescription_drug LIKE CONCAT('%', #{drugName}, '%'))
+                )
+            </if>
+        </where>
+    </select>
+</mapper> 

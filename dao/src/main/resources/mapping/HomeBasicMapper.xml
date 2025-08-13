@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.school.wz_growth.dao.HomeBasicMapper">
+
+    <select id="sel_access_ip" parameterType="map" resultType="map">
+        SELECT * FROM access_ip WHERE ip=#{ip}
+    </select>
+    <insert id="insert_access_ip" parameterType="map" keyProperty="p_id" useGeneratedKeys="true">
+        INSERT INTO `wy_school_growth`.`access_ip`
+            ( `ip`, `create_time`, `is_overseas`, `country`)
+        VALUES
+            ( #{ip}, NOW(), #{is_overseas}, #{country});
+    </insert>
+    <insert id="insert_access_ip_history" parameterType="map">
+        INSERT INTO `access_ip_history`
+        (
+        <if test="ip != null">`ip`,</if>
+        <if test="app_name != null">`app_name`,</if>
+        <if test="app_version != null">`app_version`,</if>
+        <if test="country != null">`country`,</if>
+        <if test="lat != null">`lat`,</if>
+        <if test="lng != null">`lng`,</if>
+        <if test="is_overseas != null">`is_overseas`,</if>
+        <if test="province != null">`province`,</if>
+        <if test="address != null">`address`,</if>
+        <if test="isp != null">`isp`,</if>
+        `create_time`,c_s_date
+        )
+        VALUES
+        (
+        <if test="ip != null">#{ip},</if>
+        <if test="app_name != null">#{app_name},</if>
+        <if test="app_version != null">#{app_version},</if>
+        <if test="country != null">#{country},</if>
+        <if test="lat != null">#{lat},</if>
+        <if test="lng != null">#{lng},</if>
+        <if test="is_overseas != null">#{is_overseas},</if>
+        <if test="province != null">#{province},</if>
+        <if test="address != null">#{address},</if>
+        <if test="isp != null">#{isp},</if>
+        NOW(),#{c_s_date}
+        )
+    </insert>
+
+    <insert id="insert_view_recode" parameterType="map">
+        INSERT INTO `access_view_history`
+            (  `path`, `ip`, `c_s_date`, `create_time`)
+        VALUES
+            (#{path},#{ip},#{c_s_date},NOW());
+    </insert>
+    <insert id="insert_biz_ip" parameterType="map">
+        INSERT INTO `biz_ip`
+            (  `IP`, `status`, `create_time`) VALUES
+            (  #{ip},  '1', NOW())
+    </insert>
+    <select id="sel_home_info" parameterType="map" resultType="map">
+        SELECT
+                (SELECT COUNT(id) FROM access_view_history) as pv,
+                (SELECT COUNT(DISTINCT ip) FROM access_view_history) as uv,
+                (SELECT COUNT(id) FROM access_ip) as IP_num,
+                (SELECT c_s_date FROM upd_database_history WHERE `status`=1 ORDER BY id DESC LIMIT 1) as last_update_day,
+                 (SELECT `name` FROM upd_database_history WHERE `status`=1 ORDER BY id DESC LIMIT 1) as version,
+                (select `value` from sys_params where type=4) as DRGF_desc
+    </select>
+    <select id="sel_contact_us_info" parameterType="map" resultType="map">
+        SELECT e_name, email, address,
+               customer_service_tel,customer_service_time
+        FROM sys_basic
+    </select>
+
+
+    <select id="sel_db_size"  resultType="map">
+        SELECT
+                 table_schema AS db_name, -- '数据库名'
+                SUM(data_length + index_length) AS size_bete, -- '大小（字节）'
+                ROUND(SUM(data_length + index_length) / 1024 / 1024, 2) AS size_mb   -- '大小（MB）'
+        FROM
+            information_schema.TABLES
+        WHERE
+            table_schema = 'wy_school_growth'
+        GROUP BY
+            table_schema;
+    </select>
+
+</mapper>

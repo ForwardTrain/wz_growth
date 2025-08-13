@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.school.wz_growth.dao.BizCountMapper">
+
+    <select id="sel_count_data" parameterType="map" resultType="map">
+        SELECT
+            (SELECT COUNT(id) FROM access_view_history WHERE c_s_date &lt;=#{today}) as today_see_num, -- 今日浏览量
+            (SELECT COUNT(id) FROM access_view_history WHERE c_s_date &lt;=#{yesterday}) as yesterday_see_num, -- 昨日日浏览量
+
+            (SELECT COUNT(id) FROM access_ip_history WHERE c_s_date &lt;=#{today} ) as today_visits_num, -- 今日访问量
+            (SELECT COUNT(id) FROM access_ip_history WHERE c_s_date &lt;=#{yesterday} ) as yesterday_visits_num, -- 昨日访问量
+
+            (
+                SELECT COUNT(*) FROM access_ip  WHERE create_time  BETWEEN '2024-01-01 00:00:00' AND CONCAT(#{today},' 23:59:59')
+            ) as today_ip_num, -- 今日IP数量
+            (
+                SELECT COUNT(*) FROM access_ip  WHERE create_time  BETWEEN '2024-01-01 00:00:00' AND CONCAT(#{yesterday},' 23:59:59')
+            ) as yesterday_ip_num, -- 昨日IP数量
+
+            (
+                (
+                    (SELECT COUNT(DISTINCT ip) FROM access_ip_history WHERE c_s_date=#{today}) -
+                    (SELECT COUNT(DISTINCT ip) FROM access_ip_history WHERE c_s_date=#{yesterday})
+                    )/(SELECT COUNT(DISTINCT ip) FROM access_ip_history WHERE c_s_date=#{yesterday})
+                ) as today_bounce_rate, -- 今日跳出率
+            (
+                (
+                    (SELECT COUNT(DISTINCT ip) FROM access_ip_history WHERE c_s_date=#{yesterday}) -
+                    (SELECT COUNT(DISTINCT ip) FROM access_ip_history WHERE c_s_date=#{before_yesterday})
+                    )/(SELECT COUNT(DISTINCT ip) FROM access_ip_history WHERE c_s_date=#{before_yesterday})
+            ) as before_yesterday_bounce_rate,   -- 昨日跳出率
+            (
+                SELECT
+                    ROUND((
+                              SUM( data_length + index_length ) / 1024 / 1024 / 1024
+                              ),1) "size_in_KB"
+                FROM
+                    information_schema.TABLES
+                WHERE
+                    table_schema = 'wy_school_growth'
+                GROUP BY
+                    table_schema
+            ) as size_in_KB,
+            'GB' as unit_name
+    </select>
+    <select id="sel_area_word_count_data" parameterType="map" resultType="map">
+        SELECT
+            country,
+            COUNT(1) as num
+        FROM
+            access_ip
+            <where>
+                <if test="c_s_date != null and c_s_date != ''">
+                    <choose>
+                        <!-- 年格式：2025 -->
+                        <when test="c_s_date.length() == 4">
+                            create_time BETWEEN CONCAT(#{c_s_date}, '-01-01 00:00:00')
+                            AND CONCAT(#{c_s_date}, '-12-31 23:59:59')
+                        </when>
+
+                        <!-- 年月格式：2025-09 -->
+                        <when test="c_s_date.length() == 7">
+                            create_time BETWEEN CONCAT(#{c_s_date}, '-01 00:00:00')
+                            AND LAST_DAY(CONCAT(#{c_s_date}, '-01')) + INTERVAL 1 DAY - INTERVAL 1 SECOND
+                        </when>
+
+                        <!-- 年月日格式：2025-09-01 -->
+                        <when test="c_s_date.length() == 10">
+                            create_time BETWEEN CONCAT(#{c_s_date}, ' 00:00:00')
+                            AND CONCAT(#{c_s_date}, ' 23:59:59')
+                        </when>
+
+                        <!-- 无效格式（可选兜底） -->
+                        <otherwise>
+                        </otherwise>
+                    </choose>
+                </if>
+            </where>
+        GROUP BY country
+        ORDER BY num DESC
+    </select>
+    <select id="sel_area_china_count_data" parameterType="map" resultType="map">
+        SELECT
+            province,
+            COUNT(1) as num
+        FROM
+            access_ip_history
+        <where>
+            is_overseas = 0
+            <if test="c_s_date != null and c_s_date != ''">
+                <choose>
+                    <!-- 年格式：2025 -->
+                    <when test="c_s_date.length() == 4">
+                        and create_time BETWEEN CONCAT(#{c_s_date}, '-01-01 00:00:00')
+                        AND CONCAT(#{c_s_date}, '-12-31 23:59:59')
+                    </when>
+
+                    <!-- 年月格式：2025-09 -->
+                    <when test="c_s_date.length() == 7">
+                        and create_time BETWEEN CONCAT(#{c_s_date}, '-01 00:00:00')
+                        AND LAST_DAY(CONCAT(#{c_s_date}, '-01')) + INTERVAL 1 DAY - INTERVAL 1 SECOND
+                    </when>
+
+                    <!-- 年月日格式：2025-09-01 -->
+                    <when test="c_s_date.length() == 10">
+                        and create_time BETWEEN CONCAT(#{c_s_date}, ' 00:00:00')
+                        AND CONCAT(#{c_s_date}, ' 23:59:59')
+                    </when>
+
+                    <!-- 无效格式（可选兜底） -->
+                    <otherwise>
+                        1 = 0
+                    </otherwise>
+                </choose>
+            </if>
+        </where>
+        GROUP BY province
+    </select>
+    <select id="sel_browser_count_data" parameterType="map" resultType="map">
+        SELECT
+            app_name,
+            num,
+            ROUND((
+                num*1.0/(SELECT COUNT(id) FROM access_ip_history WHERE app_name is not NULL  and app_name !='')
+                ),4) as ratio
+        FROM
+            (
+
+                SELECT
+                    app_name,
+                    COUNT(1) as num
+                FROM
+                    access_ip_history
+                WHERE
+                    app_name is not NULL
+                  and app_name !=''
+                GROUP BY app_name
+            ) temp_a
+        ORDER BY num DESC
+    </select>
+    <select id="sel_browser_page_count_data" parameterType="map" resultType="map">
+        SELECT
+            path,
+            num,
+            ROUND((
+                num*1.0/(SELECT COUNT(id) FROM access_view_history WHERE path is not NULL  and path !='')
+                ),4) as ratio
+        FROM
+            (
+
+                SELECT
+                    path,
+                    COUNT(1) as num
+                FROM
+                    access_view_history
+                WHERE
+                    path is not NULL
+                  and path !=''
+                GROUP BY path
+            ) temp_a
+        ORDER BY num DESC
+    </select>
+    <select id="sel_db_version_data" parameterType="map" resultType="map">
+        SELECT `name`, c_s_date FROM upd_database_history ORDER BY create_time DESC  LIMIT 5
+    </select>
+    <select id="sel_biz_ip_list" parameterType="map" resultType="map">
+        SELECT
+            main.ip, main.`status`,history.country,history.lat,history.lng,
+            CASE history.is_overseas
+                WHEN 0 THEN '国内'
+                WHEN 1 THEN '国外'
+                END  as overseas_desc,
+
+            history.province,history.address,history.isp,
+            DATE_FORMAT(main.create_time,'%Y-%m-%d %H:%i') as create_time
+
+        FROM
+            access_ip_history history
+                LEFT JOIN access_ip main ON history.ip=main.ip
+        GROUP BY history.ip
+        ORDER BY main.id DESC
+        limit ${start},${limit}
+    </select>
+    <select id="sel_biz_ip_list_history" parameterType="map" resultType="map">
+        SELECT
+            history.ip,history.address,history.isp,
+            DATE_FORMAT(history.create_time,'%Y-%m-%d %H:%i') as create_time
+        FROM
+            access_ip_history history
+        WHERE
+            history.ip = #{ip}
+        ORDER BY history.id DESC
+       limit ${start},${limit}
+    </select>
+    <update id="upd_customer_status" parameterType="map">
+        UPDATE `wy_school_growth`.`access_ip`
+        SET
+            `status` = #{status}
+        WHERE
+            `ip` = #{ip}
+    </update>
+
+</mapper>

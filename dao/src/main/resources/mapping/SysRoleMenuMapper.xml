@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.school.wz_growth.dao.SysRoleMenuMapper">
+
+    <resultMap id="BaseResultMap"  type="com.school.wz_growth.model.domain.sys.SysRoleMenu">
+        <result column="id" property="id" jdbcType="INTEGER" />
+        <result column="role_id" property="roleId" jdbcType="INTEGER" />
+        <result column="menu_id" property="menuId" jdbcType="VARCHAR" />
+    </resultMap>
+
+    <select id="querySysRoleMenuByRoleId" parameterType="java.util.Map" resultMap="BaseResultMap">
+        SELECT
+            id,role_id as roleId,menu_id as menuId
+        FROM
+            sys_role_menu
+        WHERE
+            role_id = #{role_id}
+    </select>
+    <select id="queryMenuByRoleId" parameterType="java.util.Map" resultType="java.util.Map">
+        SELECT
+            id,menu_id
+        FROM
+            sys_role_menu
+        WHERE
+            role_id = #{role_id}
+    </select>
+
+
+
+    <insert id="insertSysRoleMenu" parameterType="java.util.Map">
+        INSERT  into sys_role_menu(role_id,menu_id)
+        values(#{role_id}, #{menu_ids})
+    </insert>
+
+    <update id="updateSysRoleMenu" parameterType="com.school.wz_growth.model.domain.sys.SysRoleMenu">
+        update
+            sys_role_menu
+        set
+            menu_id = #{menuId}
+        where role_id = #{roleId}
+    </update>
+
+    <delete id="deleteSysRoleMenu" parameterType="java.util.Map">
+        DELETE from sys_role_menu where role_id =#{role_id}
+    </delete>
+
+
+    <select id="selectAllParentMenuId" parameterType="string" resultType="string">
+        SELECT getAllParentMenuIds(#{menu_id});
+    </select>
+</mapper>

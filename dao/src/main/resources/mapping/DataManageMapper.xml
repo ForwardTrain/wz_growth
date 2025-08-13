@@ -1,0 +1,592 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.school.wz_growth.dao.DataManageMapper">
+
+<select id="data_list" parameterType="com.alibaba.fastjson.JSONObject" resultType="com.alibaba.fastjson.JSONObject">
+    SELECT
+    bgis.id,bgis.unipro_entry,
+    drgf_code.DRGF_code drgf_code,
+    bgis.protein_name,
+    date_format(bgis.modify_time,'%Y-%m-%d %H:%i:%s') create_time,
+    bgis.operator
+    from
+    base_general_infomation_show bgis
+    LEFT JOIN sys_protein_DRGF_code drgf_code ON drgf_code.unipro_entry=bgis.unipro_entry
+    where
+    1=1
+    <if test="id != null and id != ''">
+        and drgf_code.DRGF_code regexp #{id}
+    </if>
+    <if test="name != null and name != ''">
+        and bgis.protein_name regexp #{name}
+    </if>
+    order by drgf_code.DRGF_code desc
+  limit ${start},${limit}
+</select>
+<select id="data_list_total" parameterType="com.alibaba.fastjson.JSONObject" resultType="int">
+  select
+  count(1)
+  from base_general_infomation_show
+  where 1=1
+  <if test="id != null and id != ''">
+    and id regexp #{id}
+  </if>
+  <if test="name != null and name != ''">
+    and protein_name regexp #{name}
+  </if>
+</select>
+
+  <delete id="del_data_list" parameterType="com.alibaba.fastjson.JSONObject">
+
+      delete from sys_protein_DRGF_code WHERE unipro_entry IN (
+          SELECT unipro_entry from base_general_infomation_show where id in (${ids})
+      );
+    delete from base_general_infomation_show where id in (${ids});
+    delete from base_drgf_show where p_id in (${ids});
+    delete from base_expression_and_location_show where p_id in (${ids});
+    delete from base_family_and_domain_show where p_id in (${ids});
+    delete from base_mutation_and_disease_show where p_id in (${ids});
+    delete from base_post_translational_modification_show where p_id in (${ids});
+    delete from base_protein_function_show where p_id in (${ids});
+    delete from base_protein_interaction_show where p_id in (${ids});
+    delete from base_protein_sequence_show where p_id in (${ids});
+    delete from base_protein_structure_show where p_id in (${ids});
+  </delete>
+    <insert id="add_show_from_current" parameterType="com.alibaba.fastjson.JSONObject">
+        insert into base_general_infomation_show
+        select * from base_general_infomation where id=#{id};
+        insert into base_drgf_show
+        select * from base_drgf where p_id=#{id};
+        insert into base_expression_and_location_show
+        select * from base_expression_and_location where p_id=#{id};
+        insert into base_family_and_domain_show
+        select * from base_family_and_domain where p_id=#{id};
+        insert into base_mutation_and_disease_show
+        select * from base_mutation_and_disease where p_id=#{id};
+        insert into base_post_translational_modification_show
+        select * from base_post_translational_modification where p_id=#{id};
+        insert into base_protein_function_show
+        select * from base_protein_function where p_id=#{id};
+        insert into base_protein_interaction_show
+        select * from base_protein_interaction where p_id=#{id};
+        insert into base_protein_sequence_show
+        select * from base_protein_sequence where p_id=#{id};
+        insert into base_protein_structure_show
+        select * from base_protein_structure where p_id=#{id};
+        insert into base_ptm_details_show
+        select * from base_ptm_details where p_id=#{id};
+    </insert>
+
+    <update id="set_his_s_name" parameterType="com.alibaba.fastjson.JSONObject">
+        UPDATE upd_database_history
+        SET `status` = '1',
+            `status_name` = '已更新'
+        WHERE
+            `name` = #{name}
+    </update>
+
+  <select id="sel_database_info" resultType="com.alibaba.fastjson.JSONObject">
+    SELECT round(sum(DATA_LENGTH/1024/1024),2) as data , sum(TABLE_ROWS) `rows`
+--     from information_schema.TABLES where table_schema = 'dbz' and table_name like 'base_%' and table_name not like '%show';
+    from information_schema.TABLES where table_schema = 'wy_school_growth' and table_name like 'base_%' and table_name not like '%show';
+  </select>
+
+  <select id="upd_data_list" parameterType="com.alibaba.fastjson.JSONObject"
+          resultType="com.alibaba.fastjson.JSONObject">
+    select
+    id,
+    name,
+    sort,
+    database_size,
+    database_length,
+      case status_name
+      when '1' then '已更新'
+      else '未更新'
+      end status_name,
+    operator,
+    date_format(create_time,'%Y-%m-%d %H:%i:%s') create_time
+    from
+      upd_database_history
+    where 1=1
+    <if test="name != null and name !=''">
+      and name regexp #{name}
+    </if>
+    <if test="status != null and status !=''">
+      and status = #{status}
+    </if>
+    <if test="c_s_date != null and c_s_date !=''">
+      and date_format(create_time,'%Y-%m-%d %H:%i:%s') regexp #{c_s_date}
+    </if>
+      order by id desc
+  limit ${start},${limit}
+  </select>
+  <select id="upd_data_list_total" parameterType="com.alibaba.fastjson.JSONObject"
+          resultType="int">
+    select
+    count(1)
+    from
+    upd_database_history
+    where 1=1
+    <if test="name != null and name !=''">
+      and name regexp #{name}
+    </if>
+    <if test="c_s_date != null and c_s_date !=''">
+      and date_format(create_time,'%Y-%m-%d %H:%i:%s') regexp #{c_s_date}
+    </if>
+    <if test="status != null and status !=''">
+      and status = #{status}
+    </if>
+  </select>
+
+
+  <select id="upd_data_list_details" parameterType="com.alibaba.fastjson.JSONObject"
+          resultType="com.alibaba.fastjson.JSONObject">
+    select
+    id,protein_name,protein_name_and_unipro_entry, unipro_entry
+    from base_general_infomation
+    where id=#{id}
+  </select>
+  <select id="sel_as_know" parameterType="string"
+          resultType="com.alibaba.fastjson.JSONObject">
+    select
+   *
+    from as_know
+    where p_id=#{id}
+  </select>
+  <select id="base_expression_and_location" parameterType="string"
+          resultType="java.util.LinkedHashMap">
+    select
+   *
+    from base_expression_and_location
+    where p_id=#{id}
+  </select>
+  <select id="base_family_and_domain" parameterType="string"
+          resultType="java.util.LinkedHashMap">
+    select
+   *
+    from base_family_and_domain
+    where p_id=#{id}
+  </select>
+  <select id="base_general_information" parameterType="string"
+          resultType="java.util.LinkedHashMap">
+    select
+   *
+    from base_general_infomation
+    where id=#{id}
+  </select>
+  <select id="base_mutation_and_disease" parameterType="string"
+          resultType="java.util.LinkedHashMap">
+    select
+   *
+    from base_mutation_and_disease
+    where p_id=#{id}
+  </select>
+  <select id="base_ptm_details" parameterType="string"
+          resultType="java.util.LinkedHashMap">
+    select
+   *
+    from base_ptm_details
+    where p_id=#{id}
+  </select>
+  <select id="base_ptm_details_show" parameterType="string"
+          resultType="java.util.LinkedHashMap">
+    select
+   *
+    from base_ptm_details_show
+    where p_id=#{id}
+  </select>
+  <select id="base_post_translational_modification" parameterType="string"
+          resultType="java.util.LinkedHashMap">
+    select
+   *
+    from base_post_translational_modification
+    where p_id=#{id}
+  </select>
+  <select id="base_protein_function" parameterType="string"
+          resultType="java.util.LinkedHashMap">
+    select
+   *
+    from base_protein_function
+    where p_id=#{id}
+  </select>
+  <select id="base_protein_interaction" parameterType="string"
+          resultType="java.util.LinkedHashMap">
+    select
+   *
+    from base_protein_interaction
+    where p_id=#{id}
+  </select>
+  <select id="base_protein_sequence" parameterType="string"
+          resultType="java.util.LinkedHashMap">
+    select
+   *
+    from base_protein_sequence
+    where p_id=#{id}
+  </select>
+  <select id="base_protein_structure" parameterType="string"
+          resultType="java.util.LinkedHashMap">
+    select
+   *
+    from base_protein_structure
+    where p_id=#{id}
+  </select>
+
+  <select id="base_drgf" parameterType="string"
+          resultType="java.util.LinkedHashMap">
+    select
+   *
+    from base_drgf
+    where p_id=#{id}
+  </select>
+
+  <select id="base_drgf_show" parameterType="string"
+          resultType="java.util.LinkedHashMap">
+    select
+   *
+    from base_drgf_show
+    where p_id=#{id}
+  </select>
+
+
+  <select id="upd_data_list_details_show" parameterType="com.alibaba.fastjson.JSONObject"
+          resultType="com.alibaba.fastjson.JSONObject">
+    select
+    id,protein_name,protein_name_and_unipro_entry
+    from base_general_infomation_show
+      where protein_name=#{protein_name} and protein_name_and_unipro_entry=#{protein_name_and_unipro_entry}
+  </select>
+  <select id="sel_as_know_show" parameterType="string"
+          resultType="com.alibaba.fastjson.JSONObject">
+    select
+   *
+    from as_know_show
+      where p_id=#{id}
+  </select>
+  <select id="base_expression_and_location_show" parameterType="string"
+          resultType="java.util.LinkedHashMap">
+    select
+   a.*,'base_expression_and_location_show' db
+    from base_expression_and_location_show a
+      where p_id=#{id}
+  </select>
+
+<!--    #{id}-->
+  <select id="base_family_and_domain_show" parameterType="string"
+          resultType="java.util.LinkedHashMap">
+    select
+      a.*,'base_family_and_domain_show' db,
+      (SELECT complete_form FROM base_protein_sequence_show WHERE p_id=#{id}) as complete_form
+    from base_family_and_domain_show a where p_id=#{id}
+  </select>
+  <select id="base_general_information_show" parameterType="string"
+          resultType="java.util.LinkedHashMap">
+    select
+      a.*,'base_general_infomation_show' db
+    from base_general_infomation_show a where id=#{id}
+  </select>
+  <select id="base_mutation_and_disease_show" parameterType="string"
+          resultType="java.util.LinkedHashMap">
+    select
+      a.*,'base_mutation_and_disease_show' db
+    from base_mutation_and_disease_show a where p_id=#{id}
+  </select>
+  <select id="base_post_translational_modification_show" parameterType="string"
+          resultType="java.util.LinkedHashMap">
+    select
+      a.*,'base_post_translational_modification_show' db
+    from base_post_translational_modification_show a where p_id=#{id}
+  </select>
+  <select id="base_protein_function_show" parameterType="string"
+          resultType="java.util.LinkedHashMap">
+    select
+      a.*,'base_protein_function_show' db
+    from base_protein_function_show a where p_id=#{id}
+  </select>
+  <select id="base_protein_interaction_show" parameterType="string"
+          resultType="java.util.LinkedHashMap">
+    select
+      a.*,'base_protein_interaction_show' db
+    from base_protein_interaction_show a where p_id=#{id}
+  </select>
+  <select id="base_protein_sequence_show" parameterType="string"
+          resultType="java.util.LinkedHashMap">
+    select
+      a.*,'base_protein_sequence_show' db
+<!--      position(mature_form in complete_form) mature_form_start,-->
+<!--      position(mature_form in complete_form)+mature_form_length mature_form_end,-->
+<!--      position(precursor in complete_form) precursor_start,-->
+<!--      position(precursor in complete_form)+precursor_length precursor_end-->
+    from base_protein_sequence_show a where p_id=#{id}
+  </select>
+  <select id="base_protein_structure_show" parameterType="string"
+          resultType="java.util.LinkedHashMap">
+    select
+      a.*,'base_protein_structure_show' db
+    from base_protein_structure_show a where p_id=#{id}
+  </select>
+
+    <update id="upd_p_name" parameterType="com.alibaba.fastjson.JSONObject">
+        update  base_general_infomation
+        set
+        protein_name=#{protein_name},
+        modify_time=now()
+        where id=#{id}
+    </update>
+    <select id="sel_p_id" parameterType="com.alibaba.fastjson.JSONObject"
+            resultType="com.alibaba.fastjson.JSONObject"
+    >
+        select b.id from base_general_infomation a
+        left join base_general_infomation_show b on on b.batch=a.batch and b.gene_id=a.gene_id
+        where a.id=#{id}
+    </select>
+    <delete id="del_as_know" parameterType="com.alibaba.fastjson.JSONObject">
+        delete from as_know
+        where p_id =#{id};
+    </delete>
+
+    <insert id="add_a_k_s" parameterType="com.alibaba.fastjson.JSONObject">
+        insert into as_know_show(p_id,name,create_time)
+        values
+        <foreach collection="list" separator="," item="item">
+            (#{item.p_id},#{item.name},now())
+        </foreach>
+    </insert>
+    <insert id="add_a_k" parameterType="com.alibaba.fastjson.JSONObject">
+        insert into as_know(p_id,name,create_time)
+        values
+            (#{p_id},#{name},now())
+    </insert>
+    <delete id="del_a_k" parameterType="com.alibaba.fastjson.JSONObject">
+        delete from  as_know where id= #{id};
+    </delete>
+
+    <update id="diff_data_upd" parameterType="com.alibaba.fastjson.JSONObject">
+        <foreach collection="list" item="item" separator=";">
+            update ${item.db}
+            set ${item.name}=#{item.value}
+            where id=#{item.id}
+        </foreach>
+    </update>
+    <delete id="del_list_show" parameterType="string">
+        delete from base_general_infomation_show where id in (${ids});
+        delete from base_drgf_show where p_id in (${ids});
+        delete from base_expression_and_location_show where p_id in (${ids});
+        delete from base_family_and_domain_show where p_id in (${ids});
+        delete from base_mutation_and_disease_show where p_id in (${ids});
+        delete from base_post_translational_modification_show where p_id in (${ids});
+        delete from base_protein_function_show where p_id in (${ids});
+        delete from base_protein_interaction_show where p_id in (${ids});
+        delete from base_protein_sequence_show where p_id in (${ids});
+        delete from base_protein_structure_show where p_id in (${ids});
+        delete from base_ptm_details_show where p_id in (${ids});
+    </delete>
+
+
+    <select id="upd_data_list_sel" parameterType="com.alibaba.fastjson.JSONObject"
+            resultType="com.alibaba.fastjson.JSONObject">
+        select * from upd_database_history order by id desc limit 1
+<!--        where id=#{id}-->
+    </select>
+    <select id="upd_data_list_sel_db_combobox"
+            resultType="com.alibaba.fastjson.JSONObject">
+        SELECT `name` FROM upd_database_history WHERE `status`=2
+    </select>
+
+    <select id="sel_list_show"
+            resultType="com.alibaba.fastjson.JSONObject">
+        select id,protein_name,protein_name_and_unipro_entry,unipro_entry from base_general_infomation_show
+    </select>
+    <select id="upd_data_list_sel_db_combobox_right_list" parameterType="com.alibaba.fastjson.JSONObject"
+            resultType="com.alibaba.fastjson.JSONObject">
+        select id,protein_name,protein_name_and_unipro_entry,unipro_entry from base_general_infomation
+        where 	batch = #{name}
+    </select>
+
+    <select id="upd_data_list_sel_db_combobox_right_list_total" parameterType="com.alibaba.fastjson.JSONObject"
+            resultType="int">
+        select count(1) from base_general_infomation
+        where batch=#{name}
+    </select>
+
+    <select id="sel_protein_type_list" parameterType="map" resultType="map">
+        SELECT
+        spt.`id`, spt.`name`, spt.`desc`, DATE_FORMAT(spt.modify_time,'%Y-%m-%d %H:%i') as modify_time,
+        category.`name` as category_name, category.id as category_id,
+        (
+        SELECT
+        GROUP_CONCAT(gis.protein_name SEPARATOR '\n') as protin_names
+        FROM
+        sys_protein_type_unipro type_unipro
+        LEFT JOIN base_general_infomation_show gis ON gis.unipro_entry=type_unipro.unipro_entry
+        WHERE
+        type_unipro.type_id = spt.id
+        ) as protin_names
+        FROM
+        sys_protein_type spt
+        LEFT JOIN sys_protein_type_category category ON category.id = spt.category_id
+        <where>
+            spt.family_type=2
+            <if test="name != null and name != ''">
+                AND spt.`name` REGEXP #{name}
+            </if>
+        </where>
+    </select>
+    <select id="sel_protein_type_list_detail" parameterType="map" resultType="map">
+        SELECT * FROM sys_protein_type_unipro WHERE type_id=#{id}
+    </select>
+    <select id="sel_protein_type_list_option" parameterType="map" resultType="map">
+        SELECT
+          gis.unipro_entry, `protein_name`, gene_names,also_known_as,
+          CONCAT(protein_name,'(',IFNULL(`gene_names`,''),')') as `name`
+        FROM
+          base_general_infomation_show gis
+        <where>
+            1=1
+            <if test="name != null and name != ''">
+                AND (protein_name REGEXP #{name}  OR gene_names REGEXP #{name}  )
+            </if>
+        </where>
+    </select>
+    <delete id="del_protein_type_list" parameterType="map">
+        DELETE FROM sys_protein_type_unipro WHERE type_id IN (${ids});
+        DELETE FROM sys_protein_type WHERE id IN (${ids});
+    </delete>
+    <insert id="add_protein_type_list" parameterType="map" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_protein_type
+            (`name`, `desc`,create_time,modify_time)
+        VALUES
+            (#{name},#{desc},now(),now())
+    </insert>
+    <update id="update_protein_type_list" parameterType="map">
+        UPDATE sys_protein_type
+        SET
+            `name`=#{name},
+            `desc`=#{desc},
+
+            `modify_time`=now()
+        WHERE
+            id=#{id}
+    </update>
+    <delete id="del_protein_type_list_uniprot" parameterType="map">
+        DELETE FROM sys_protein_type_unipro WHERE type_id = #{id}
+    </delete>
+    <insert id="batch_insert_protin_type_unipro_list" parameterType="map">
+        INSERT INTO sys_protein_type_unipro
+            (type_id,family_id,unipro_entry,modify_time)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{id},#{id},#{item.unipro_entry},now())
+        </foreach>
+    </insert>
+
+    <select id="base_general_information_show2" parameterType="string"
+            resultType="java.util.LinkedHashMap">
+        SELECT
+            DRGF_code.`name` as protein_name,
+            DRGF_code.`also_know_as` as also_known_as,
+            DRGF_code.`DRGF_code` as drgfCode,
+            a.gene_names as gene_name,
+            a.gene_names,a.organism, a.protein_status,
+            a.unipro_entry,a.gene_id, a.gene_also_known_as
+        FROM
+            base_general_infomation_show a
+                LEFT JOIN sys_protein_DRGF_code DRGF_code ON DRGF_code.unipro_entry=a.unipro_entry
+        WHERE
+            a.id = #{id}
+    </select>
+    <select id="base_general_information_familys_show" parameterType="map" resultType="map">
+        SELECT
+            type.`name`, type.id
+        FROM
+             sys_protein_type type
+             LEFT JOIN sys_protein_type_unipro type_unipro ON type_unipro.family_id=type.id
+        WHERE
+            type_unipro.unipro_entry=#{unipro_entry}
+    </select>
+    <select id="base_protein_sequence_show2" parameterType="string"
+            resultType="java.util.LinkedHashMap">
+        select
+        a.*
+        from base_protein_sequence_show a where p_id=#{id}
+    </select>
+    <select id="base_protein_function2" parameterType="string"
+            resultType="java.util.LinkedHashMap">
+        select
+            *
+        from base_protein_function_show
+        where p_id=#{id}
+    </select>
+    <select id="base_expression_and_location_show2" parameterType="map"
+            resultType="map">
+        select
+            a.induction, a.developmental_stage,
+            IF(c.organism REGEXP '(Human)',1,2) as is_human,
+
+            a.tissue_specificity1 as hpa_code,
+            IF(a.tissue_specificity1 is not null and a.tissue_specificity1!='',
+               CONCAT('https://www.proteinatlas.org/',a.tissue_specificity1),'') as hpa_url,
+
+
+            b.RNA_EXPRESSION_OVERVIEW as hpa_RNA_EXPRESSION_OVERVIEW,
+            a.single_cell_type_specificity as hpa_single_cell_type_specificity,
+            a.tissue_specificity_rna, a.expression_specificity
+        from
+            base_expression_and_location_show a
+                LEFT JOIN base_general_infomation_show c ON c.id=a.p_id
+                LEFT JOIN base_expression_and_location_show_hpa b ON b.hpa_code=a.tissue_specificity1
+        where p_id=#{id}
+    </select>
+    <select id="base_protein_structure_show2" parameterType="string"
+            resultType="java.util.LinkedHashMap">
+        select
+            a.*,'base_protein_structure_show' db
+        from base_protein_structure_show a where p_id=#{id}
+    </select>
+    <select id="base_family_and_domain_show2" parameterType="string"
+            resultType="java.util.LinkedHashMap">
+        select
+            a.*,
+            (SELECT complete_form FROM base_protein_sequence_show WHERE p_id=#{id}) as complete_form
+        from base_family_and_domain_show a where p_id=#{id}
+    </select>
+    <select id="base_protein_interaction_show2" parameterType="string"
+            resultType="java.util.LinkedHashMap">
+        select
+            `protein_protein_interaction`, `protein_complex`, `ligand_receptor_interaction`,
+            `pubmed_ID`,  `svg`,
+
+            IF(a.protein_protein_interaction is not null and a.protein_protein_interaction!='',
+               CONCAT('https://cn.string-db.org/network/',a.protein_protein_interaction),'') as img_url
+        from base_protein_interaction_show a where p_id=#{id}
+    </select>
+
+    <select id="base_drgf_show2" parameterType="string"
+            resultType="java.util.LinkedHashMap">
+        select
+            *
+        from base_drgf_show
+        where p_id=#{id}
+    </select>
+    <select id="base_ptm_details_show2" parameterType="string"
+            resultType="java.util.LinkedHashMap">
+        select
+            *
+        from base_ptm_details_show
+        where p_id=#{id}
+    </select>
+    <select id="base_mutation_and_disease_show2" parameterType="string"
+            resultType="java.util.LinkedHashMap">
+        select
+            a.*
+        from base_mutation_and_disease_show a where p_id=#{id}
+    </select>
+<!--    <update id="update_sys_version_status" parameterType="string">-->
+<!--        UPDATE `wy_school_growth`.`upd_database_history`-->
+<!--        SET-->
+<!--            `status` = '1',-->
+<!--            `status_name` = '已更新'-->
+<!--        WHERE-->
+<!--            `name` = #{name};-->
+<!--    </update>-->
+
+</mapper>

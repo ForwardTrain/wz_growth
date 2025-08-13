@@ -1,0 +1,827 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.school.wz_growth.dao.BaseGeneralInfomationShowMapper">
+
+<!--	&lt;!&ndash; 可根据自己的需求，是否要使用 &ndash;&gt;-->
+<!--    <resultMap type="com.school.wz_growth.model.domain.po.BaseGeneralInfomationShowPo" id="baseGeneralInfomationShowMap">-->
+<!--        <result property="id" column="id"/>-->
+<!--        <result property="proteinName" column="protein_name"/>-->
+<!--        <result property="shortNames" column="short_names"/>-->
+<!--        <result property="geneNames" column="gene_names"/>-->
+<!--        <result property="alsoKnownAs" column="also_known_as"/>-->
+<!--        <result property="geneId" column="gene_id"/>-->
+<!--        <result property="organism" column="organism"/>-->
+<!--        <result property="uniproEntry" column="unipro_entry"/>-->
+<!--        <result property="createTime" column="create_time"/>-->
+<!--        <result property="modifyTime" column="modify_time"/>-->
+<!--        <result property="cSDate" column="c_s_date"/>-->
+<!--        <result property="batch" column="batch"/>-->
+<!--        <result property="operator" column="operator"/>-->
+<!--        <result property="proteinNameAndUniproEntry" column="protein_name_and_unipro_entry"/>-->
+<!--        <result property="keyWords" column="key_words"/>-->
+<!--        <result property="proteinStatus" column="protein_status"/>-->
+<!--        <result property="family" column="family"/>-->
+<!--        <result property="functionPubmedIds" column="function_pubmed_ids"/>-->
+<!--        <result property="geneOfficialSymbol" column="gene_official_symbol"/>-->
+<!--        <result property="geneAlsoKnownAs" column="gene_also_known_as"/>-->
+<!--        <result property="geneSummary" column="gene_summary"/>-->
+<!--    </resultMap>-->
+
+    <select id="sel_protein_type_list" parameterType="map" resultType="map">
+        SELECT
+        spt.`id`, spt.`name`,
+        -- spt.`desc`,
+        DATE_FORMAT(spt.modify_time,'%Y-%m-%d %H:%i') as modify_time
+        FROM
+        sys_protein_type spt
+        LEFT JOIN sys_protein_type_category category ON category.id = spt.category_id
+        <where>
+            spt.family_type=2
+            <if test="name != null and name != ''">
+                AND spt.`name` REGEXP #{name}
+            </if>
+        </where>
+    </select>
+    <insert id="add_sys_protein_type" parameterType="com.alibaba.fastjson.JSONObject" useGeneratedKeys="true" keyProperty="id">
+        insert into sys_protein_type(name,create_time) values(#{name},now())
+    </insert>
+    <insert id="add_sys_protein_type_unipro"  parameterType="com.alibaba.fastjson.JSONObject">
+        insert into sys_protein_type_unipro(family_id,unipro_entry,create_time) values(#{family_id},#{unipro_entry},now())
+    </insert>
+
+    <insert id="upd_main_table" parameterType="com.alibaba.fastjson.JSONObject">
+        insert into base_general_infomation_show_upd values
+        select * from base_general_infomation_show where id=#{id}
+    </insert>
+    <delete id="del_main_table" parameterType="com.alibaba.fastjson.JSONObject">
+        delete from base_general_infomation_show where id=#{id}
+    </delete>
+
+    <select id="getCode" resultType="string">
+        select max(DRGF_code) from sys_protein_DRGF_code
+    </select>
+
+
+    <select id="base_general_information_show2" parameterType="string"
+            resultType="java.util.LinkedHashMap">
+        SELECT
+            DRGF_code.`name` as protein_name,
+            DRGF_code.`also_know_as` as also_known_as,
+            DRGF_code.`DRGF_code` as drgfCode,
+            a.gene_names as gene_name,
+            a.gene_names,a.organism, a.protein_status,
+            a.unipro_entry,a.gene_id, a.gene_also_known_as
+        FROM
+            base_general_infomation_show a
+                LEFT JOIN sys_protein_DRGF_code DRGF_code ON DRGF_code.unipro_entry=a.unipro_entry
+        WHERE
+            a.id = #{id}
+    </select>
+    <select id="base_general_information_familys_show" parameterType="map" resultType="map">
+        SELECT
+            type.`name`, type.id
+        FROM
+            sys_protein_type type
+                LEFT JOIN sys_protein_type_unipro type_unipro ON type_unipro.family_id=type.id
+        WHERE
+            type_unipro.unipro_entry=#{unipro_entry}
+    </select>
+    <select id="base_protein_sequence_show2" parameterType="string"
+            resultType="java.util.LinkedHashMap">
+        select
+            a.*
+        from base_protein_sequence_show a where p_id=#{id}
+    </select>
+    <select id="base_protein_function2" parameterType="string"
+            resultType="java.util.LinkedHashMap">
+        select
+            *
+        from base_protein_function_show
+        where p_id=#{id}
+    </select>
+    <select id="base_expression_and_location_show2" parameterType="map"
+            resultType="map">
+        select
+            a.induction, a.developmental_stage,
+            IF(c.organism REGEXP '(Human)',1,2) as is_human,
+
+            a.tissue_specificity1 as hpa_code,
+            IF(a.tissue_specificity1 is not null and a.tissue_specificity1!='',
+               CONCAT('https://www.proteinatlas.org/',a.tissue_specificity1),'') as hpa_url,
+
+
+            b.RNA_EXPRESSION_OVERVIEW as hpa_RNA_EXPRESSION_OVERVIEW,
+            a.single_cell_type_specificity as hpa_single_cell_type_specificity,
+            a.tissue_specificity_rna, a.expression_specificity
+        from
+            base_expression_and_location_show a
+                LEFT JOIN base_general_infomation_show c ON c.id=a.p_id
+                LEFT JOIN base_expression_and_location_show_hpa b ON b.hpa_code=a.tissue_specificity1
+        where p_id=#{id}
+    </select>
+    <select id="base_protein_structure_show2" parameterType="string"
+            resultType="java.util.LinkedHashMap">
+        select
+            a.*,'base_protein_structure_show' db
+        from base_protein_structure_show a where p_id=#{id}
+    </select>
+    <select id="base_family_and_domain_show2" parameterType="string"
+            resultType="java.util.LinkedHashMap">
+        select
+            a.*,
+            (SELECT complete_form FROM base_protein_sequence_show WHERE p_id=#{id}) as complete_form
+        from base_family_and_domain_show a where p_id=#{id}
+    </select>
+    <select id="base_protein_interaction_show2" parameterType="string"
+            resultType="java.util.LinkedHashMap">
+        select
+            `protein_protein_interaction`, `protein_complex`, `ligand_receptor_interaction`,
+            `pubmed_ID`,  `svg`,
+
+            IF(a.protein_protein_interaction is not null and a.protein_protein_interaction!='',
+               CONCAT('https://cn.string-db.org/network/',a.protein_protein_interaction),'') as img_url
+        from base_protein_interaction_show a where p_id=#{id}
+    </select>
+
+    <select id="base_drgf_show2" parameterType="string"
+            resultType="java.util.LinkedHashMap">
+        select
+            *
+        from base_drgf_show
+        where p_id=#{id}
+    </select>
+    <select id="base_ptm_details_show2" parameterType="string"
+            resultType="java.util.LinkedHashMap">
+        select
+            *
+        from base_ptm_details_show
+        where p_id=#{id}
+    </select>
+    <select id="base_mutation_and_disease_show2" parameterType="string"
+            resultType="java.util.LinkedHashMap">
+        select
+            a.*
+        from base_mutation_and_disease_show a where p_id=#{id}
+    </select>
+
+    <insert id="insert_base_general_infomation_show" parameterType="com.alibaba.fastjson.JSONObject" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO `wy_school_growth`.`base_general_infomation_show`
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="protein_name != null and protein_name != ''">`protein_name`,</if>
+            <if test="short_names != null and short_names != ''">`short_names`,</if>
+            <if test="gene_names != null and gene_names != ''">`gene_names`,</if>
+            <if test="also_known_as != null and also_known_as != ''">`also_known_as`,</if>
+            <if test="gene_id != null and gene_id != ''">`gene_id`,</if>
+            <if test="organism != null and organism != ''">`organism`,</if>
+            <if test="unipro_entry != null and unipro_entry != ''">`unipro_entry`,</if>
+            `create_time`,
+            `modify_time`,
+            <if test="operator != null and operator != ''">`operator`,</if>
+            <if test="protein_name_and_unipro_entry != null and protein_name_and_unipro_entry != ''">`protein_name_and_unipro_entry`,</if>
+            <if test="key_words != null and key_words != ''">`key_words`,</if>
+            <if test="protein_status != null and protein_status != ''">`protein_status`,</if>
+            <if test="function_pubmed_ids != null and function_pubmed_ids != ''">`function_pubmed_ids`,</if>
+            <if test="gene_official_symbol != null and gene_official_symbol != ''">`gene_official_symbol`,</if>
+            <if test="gene_also_known_as != null and gene_also_known_as != ''">`gene_also_known_as`,</if>
+            <if test="gene_summary != null and gene_summary != ''">`gene_summary`,</if>
+        </trim>
+        VALUES
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="protein_name != null and protein_name != ''">#{protein_name},</if>
+            <if test="short_names != null and short_names != ''">#{short_names},</if>
+            <if test="gene_names != null and gene_names != ''">#{gene_names},</if>
+            <if test="also_known_as != null and also_known_as != ''">#{also_known_as},</if>
+            <if test="gene_id != null and gene_id != ''">#{gene_id},</if>
+            <if test="organism != null and organism != ''">#{organism},</if>
+            <if test="unipro_entry != null and unipro_entry != ''">#{unipro_entry},</if>
+            now(),
+            now(),
+            <if test="operator != null and operator != ''">#{operator},</if>
+            <if test="protein_name_and_unipro_entry != null and protein_name_and_unipro_entry != ''">#{protein_name_and_unipro_entry},</if>
+            <if test="key_words != null and key_words != ''">#{key_words},</if>
+            <if test="protein_status != null and protein_status != ''">#{protein_status},</if>
+            <if test="function_pubmed_ids != null and function_pubmed_ids != ''">#{function_pubmed_ids},</if>
+            <if test="gene_official_symbol != null and gene_official_symbol != ''">#{gene_official_symbol},</if>
+            <if test="gene_also_known_as != null and gene_also_known_as != ''">#{gene_also_known_as},</if>
+            <if test="gene_summary != null and gene_summary != ''">#{gene_summary},</if>
+        </trim>;
+
+        INSERT INTO `wy_school_growth`.`sys_protein_DRGF_code`
+        (  `DRGF_code`, `unipro_entry`,  `create_time`, `modify_time`, `name`)
+        VALUES
+        ( #{drgfCode}, #{unipro_entry},NOW(),NOW(),#{protein_name} );
+    </insert>
+    <insert id="insert_base_expression_and_location_show" parameterType="com.alibaba.fastjson.JSONObject">
+        INSERT INTO `wy_school_growth`.`base_expression_and_location_show`
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="p_id != null">`p_id`,</if>
+            <if test="developmental_stage != null and developmental_stage != ''">`developmental_stage`,</if>
+            <if test="induction != null and induction != ''">`induction`,</if>
+            <if test="hpa_code != null and hpa_code != ''">`tissue_specificity1`,</if>
+            <if test="tissue_specificity2 != null and tissue_specificity2 != ''">`tissue_specificity2`,</if>
+            <if test="tissue_specificity3 != null and tissue_specificity3 != ''">`tissue_specificity3`,</if>
+            <if test="cell_type_specificity2 != null and cell_type_specificity2 != ''">`cell_type_specificity2`,</if>
+            <if test="subcellular_location != null and subcellular_location != ''">`subcellular_location`,</if>
+            `create_time`,
+            `modify_time`,
+            <if test="RNA_EXPRESSION_OVERVIEW != null and RNA_EXPRESSION_OVERVIEW != ''">`RNA_EXPRESSION_OVERVIEW`,</if>
+            <if test="PROTEIN_EXPRESSION_OVERVIEW != null and PROTEIN_EXPRESSION_OVERVIEW != ''">`PROTEIN_EXPRESSION_OVERVIEW`,</if>
+            <if test="tissue_specificity_rna != null and tissue_specificity_rna != ''">`tissue_specificity_rna`,</if>
+            <if test="single_cell_type_specificity != null and single_cell_type_specificity != ''">`single_cell_type_specificity`,</if>
+            <if test="expression_specificity != null and expression_specificity != ''">`expression_specificity`,</if>
+        </trim>
+        VALUES
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="p_id != null">#{p_id},</if>
+            <if test="developmental_stage != null and developmental_stage != ''">#{developmental_stage},</if>
+            <if test="induction != null and induction != ''">#{induction},</if>
+            <if test="hpa_code != null and hpa_code != ''">#{hpa_code},</if>
+            <if test="tissue_specificity2 != null and tissue_specificity2 != ''">#{tissue_specificity2},</if>
+            <if test="tissue_specificity3 != null and tissue_specificity3 != ''">#{tissue_specificity3},</if>
+            <if test="cell_type_specificity2 != null and cell_type_specificity2 != ''">#{cell_type_specificity2},</if>
+            <if test="subcellular_location != null and subcellular_location != ''">#{subcellular_location},</if>
+            NOW(),
+            NOW(),
+            <if test="RNA_EXPRESSION_OVERVIEW != null and RNA_EXPRESSION_OVERVIEW != ''">#{RNA_EXPRESSION_OVERVIEW},</if>
+            <if test="PROTEIN_EXPRESSION_OVERVIEW != null and PROTEIN_EXPRESSION_OVERVIEW != ''">#{PROTEIN_EXPRESSION_OVERVIEW},</if>
+            <if test="tissue_specificity_rna != null and tissue_specificity_rna != ''">#{tissue_specificity_rna},</if>
+            <if test="single_cell_type_specificity != null and single_cell_type_specificity != ''">#{single_cell_type_specificity},</if>
+            <if test="expression_specificity != null and expression_specificity != ''">#{expression_specificity},</if>
+        </trim>;
+    </insert>
+    <insert id="insert_base_expression_and_location_show_hpa" parameterType="com.alibaba.fastjson.JSONObject">
+        INSERT INTO `wy_school_growth`.`base_expression_and_location_show_hpa`
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            `hpa_code`,
+            <if test="tissue_specificity1 != null">`tissue_specificity1`,</if>
+            <if test="hpa_RNA_EXPRESSION_OVERVIEW != null and hpa_RNA_EXPRESSION_OVERVIEW != ''">`RNA_EXPRESSION_OVERVIEW`,</if>
+            <if test="mac_value_RNA_EXPRESSION_OVERVIEW != null">`mac_value_RNA_EXPRESSION_OVERVIEW`,</if>
+            <if test="PROTEIN_EXPRESSION_OVERVIEW != null">`PROTEIN_EXPRESSION_OVERVIEW`,</if>
+            <if test="single_cell_type_specificity != null">`single_cell_type_specificity`,</if>
+            `create_time`,
+            `modify_time`,
+            `url`
+        </trim>
+        VALUES
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            #{hpa_code},
+            <if test="tissue_specificity1 != null">#{tissue_specificity1},</if>
+            <if test="hpa_RNA_EXPRESSION_OVERVIEW != null and hpa_RNA_EXPRESSION_OVERVIEW != ''">#{hpa_RNA_EXPRESSION_OVERVIEW},</if>
+            <if test="mac_value_RNA_EXPRESSION_OVERVIEW != null">#{mac_value_RNA_EXPRESSION_OVERVIEW},</if>
+            <if test="PROTEIN_EXPRESSION_OVERVIEW != null">#{PROTEIN_EXPRESSION_OVERVIEW},</if>
+            <if test="single_cell_type_specificity != null">#{single_cell_type_specificity},</if>
+            now(),
+            now(),
+            #{url}
+        </trim>;
+    </insert>
+    <insert id="insert_base_family_and_domain_show" parameterType="com.alibaba.fastjson.JSONObject">
+        INSERT INTO `wy_school_growth`.`base_family_and_domain_show`
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            `p_id`,
+            <if test="protein_family != null and protein_family != ''">`protein_family`,</if>
+            <if test="interPro_accession != null and interPro_accession != ''">`interPro_accession`,</if>
+            <if test="domain != null and domain != ''">`domain`,</if>
+            `create_time`,
+            `modify_time`
+        </trim>
+        VALUES
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            #{p_id},
+            <if test="protein_family != null and protein_family != ''">#{protein_family},</if>
+            <if test="interPro_accession != null and interPro_accession != ''">#{interPro_accession},</if>
+            <if test="domain != null and domain != ''">#{domain},</if>
+            NOW(),
+            NOW()
+        </trim>
+    </insert>
+    <insert id="insert_base_mutation_and_disease_show" parameterType="com.alibaba.fastjson.JSONObject">
+        INSERT INTO `wy_school_growth`.`base_mutation_and_disease_show`
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            `p_id`,
+            <if test="involvement_in_disease != null and involvement_in_disease != ''">`involvement_in_disease`,</if>
+            <if test="mutagenesis != null and mutagenesis != ''">`mutagenesis`,</if>
+            `create_time`,
+            `modify_time`,
+            <if test="disease_json != null and disease_json != ''">`disease_json`,</if>
+        </trim>
+        VALUES
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            #{p_id},
+            <if test="involvement_in_disease != null and involvement_in_disease != ''">#{involvement_in_disease},</if>
+            <if test="mutagenesis != null and mutagenesis != ''">#{mutagenesis},</if>
+            NOW(),
+            NOW(),
+            <if test="disease_json != null and disease_json != ''">#{disease_json},</if>
+        </trim>
+    </insert>
+    <insert id="insert_base_ptm_details_show" parameterType="com.alibaba.fastjson.JSONObject">
+        INSERT INTO `wy_school_growth`.`base_ptm_details_show`
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="site != null and site != ''">`site`,</if>
+            <if test="ptm_type != null and ptm_type != ''">`ptm_type`,</if>
+            <if test="ptm_enzyme != null">`ptm_enzyme`,</if>
+            <if test="source_all != null and source_all != ''">`source_all`,</if>
+            <if test="score_all != null">`score_all`,</if>
+            `create_time`,
+            `p_id`,
+            <if test="pmid != null and pmid != ''">`pmid`,</if>
+            <if test="source_txt != null and source_txt != ''">`source_txt`,</if>
+        </trim>
+        VALUES
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="site != null and site != ''">#{site},</if>
+            <if test="ptm_type != null and ptm_type != ''">#{ptm_type},</if>
+            <if test="ptm_enzyme != null">#{ptm_enzyme},</if>
+            <if test="source_all != null and source_all != ''">#{source_all},</if>
+            <if test="score_all != null">#{score_all},</if>
+            NOW(),
+            #{p_id},
+            <if test="pmid != null and pmid != ''">#{pmid},</if>
+            <if test="source_txt != null and source_txt != ''">#{source_txt},</if>
+        </trim>
+    </insert>
+    <insert id="insert_base_protein_function_show" parameterType="com.alibaba.fastjson.JSONObject">
+        INSERT INTO `wy_school_growth`.`base_protein_function_show`
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+
+            <if test="p_id != null">`p_id`,</if>
+            <if test="function != null and function != ''">`function`,</if>
+            <if test="gene_ontology_biological_process != null and gene_ontology_biological_process != ''">`gene_ontology_biological_process`,</if>
+            <if test="gene_ontology_cellular_component != null and gene_ontology_cellular_component != ''">`gene_ontology_cellular_component`,</if>
+            <if test="gene_ontology_molecular_function != null and gene_ontology_molecular_function != ''">`gene_ontology_molecular_function`,</if>
+            `create_time`,
+            `modify_time`,
+            <if test="function_pubmed_ids != null and function_pubmed_ids != ''">`function_pubmed_ids`,</if>
+        </trim>
+        VALUES
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="p_id != null">#{p_id},</if>
+            <if test="function != null and function != ''">#{function},</if>
+            <if test="gene_ontology_biological_process != null and gene_ontology_biological_process != ''">#{gene_ontology_biological_process},</if>
+            <if test="gene_ontology_cellular_component != null and gene_ontology_cellular_component != ''">#{gene_ontology_cellular_component},</if>
+            <if test="gene_ontology_molecular_function != null and gene_ontology_molecular_function != ''">#{gene_ontology_molecular_function},</if>
+            NOW(),
+            NOW(),
+            <if test="function_pubmed_ids != null and function_pubmed_ids != ''">#{function_pubmed_ids},</if>
+        </trim>
+    </insert>
+    <insert id="insert_base_protein_interaction_show" parameterType="com.alibaba.fastjson.JSONObject">
+        INSERT INTO `wy_school_growth`.`base_protein_interaction_show`
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="p_id != null">`p_id`,</if>
+            <if test="protein_protein_interaction != null and protein_protein_interaction != ''">`protein_protein_interaction`,</if>
+            <if test="protein_complex != null">`protein_complex`,</if>
+            <if test="ligand_receptor_interaction != null">`ligand_receptor_interaction`,</if>
+            <if test="pubmed_ID != null and pubmed_ID != ''">`pubmed_ID`,</if>
+            `create_time`,
+            `modify_time`,
+            <if test="svg != null and svg != ''">`svg`,</if>
+        </trim>
+        VALUES
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">#{id},</if>
+            <if test="p_id != null">#{p_id},</if>
+            <if test="protein_protein_interaction != null and protein_protein_interaction != ''">#{protein_protein_interaction},</if>
+            <if test="protein_complex != null">#{protein_complex},</if>
+            <if test="ligand_receptor_interaction != null">#{ligand_receptor_interaction},</if>
+            <if test="pubmed_ID != null and pubmed_ID != ''">#{pubmed_ID},</if>
+            NOW(),
+            NOW(),
+            <if test="svg != null and svg != ''">#{svg},</if>
+        </trim>
+    </insert>
+    <insert id="insert_base_protein_sequence_show" parameterType="com.alibaba.fastjson.JSONObject">
+        INSERT INTO `wy_school_growth`.`base_protein_sequence_show`
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="p_id != null">`p_id`,</if>
+            <if test="complete_form != null and complete_form != ''">`complete_form`,</if>
+            <if test="length != null and length != ''">`length`,</if>
+            <if test="precursor != null and precursor != ''">`precursor`,</if>
+            <if test="precursor_length != null and precursor_length != ''">`precursor_length`,</if>
+            <if test="mature_form != null and mature_form != ''">`mature_form`,</if>
+            <if test="mature_form_length != null and mature_form_length != ''">`mature_form_length`,</if>
+            `create_time`,
+            `modify_time`,
+        </trim>
+        VALUES
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="p_id != null">#{p_id},</if>
+            <if test="complete_form != null and complete_form != ''">#{complete_form},</if>
+            <if test="length != null and length != ''">#{length},</if>
+            <if test="precursor != null and precursor != ''">#{precursor},</if>
+            <if test="precursor_length != null and precursor_length != ''">#{precursor_length},</if>
+            <if test="mature_form != null and mature_form != ''">#{mature_form},</if>
+            <if test="mature_form_length != null and mature_form_length != ''">#{mature_form_length},</if>
+            NOW(),
+            NOW(),
+        </trim>
+    </insert>
+    <insert id="insert_base_protein_structure_show" parameterType="com.alibaba.fastjson.JSONObject">
+        INSERT INTO `wy_school_growth`.`base_protein_structure_show`
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="p_id != null">`p_id`,</if>
+            <if test="structure_3D != null">`structure_3D`,</if>
+            <if test="PDB_ID != null and PDB_ID != ''">`PDB_ID`,</if>
+            <if test="alphaFold_identifier != null and alphaFold_identifier != ''">`alphaFold_identifier`,</if>
+            <if test="beta_strand != null and beta_strand != ''">`beta_strand`,</if>
+            <if test="helix != null and helix != ''">`helix`,</if>
+            <if test="turn != null and turn != ''">`turn`,</if>
+            `create_time`,
+            `modify_time`,
+            <if test="structure_num != null">`structure_num`,</if>
+        </trim>
+        VALUES
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="p_id != null">#{p_id},</if>
+            <if test="structure_3D != null">#{structure_3D},</if>
+            <if test="PDB_ID != null and PDB_ID != ''">#{PDB_ID},</if>
+            <if test="alphaFold_identifier != null and alphaFold_identifier != ''">#{alphaFold_identifier},</if>
+            <if test="beta_strand != null and beta_strand != ''">#{beta_strand},</if>
+            <if test="helix != null and helix != ''">#{helix},</if>
+            <if test="turn != null and turn != ''">#{turn},</if>
+            NOW(),
+            NOW(),
+            <if test="structure_num != null">#{structure_num},</if>
+        </trim>
+    </insert>
+    <insert id="insert_base_drgf_show" parameterType="com.alibaba.fastjson.JSONObject">
+        INSERT INTO `wy_school_growth`.`base_drgf_show`
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="entry_name != null and entry_name != ''">`entry_name`,</if>
+            <if test="drgf_id != null">`drgf_id`,</if>
+            `create_time`,
+            <if test="modify_time != null">`modify_time`,</if>
+            <if test="pathways != null and pathways != ''">`pathways`,</if>
+            <if test="c_s_date != null">`c_s_date`,</if>
+            <if test="batch != null">`batch`,</if>
+            <if test="p_id != null">`p_id`,</if>
+            <if test="pathway_data != null and pathway_data != ''">`pathway_data`,</if>
+        </trim>
+        VALUES
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="entry_name != null and entry_name != ''">#{entry_name},</if>
+            <if test="drgf_id != null">#{drgf_id},</if>
+            NOW(),
+            <if test="modify_time != null">#{modify_time},</if>
+            <if test="pathways != null and pathways != ''">#{pathways},</if>
+            <if test="c_s_date != null">#{c_s_date},</if>
+            <if test="batch != null">#{batch},</if>
+            <if test="p_id != null">#{p_id},</if>
+            <if test="pathway_data != null and pathway_data != ''">#{pathway_data},</if>
+        </trim>
+    </insert>
+
+    <update id="update_base_general_infomation_show" parameterType="com.alibaba.fastjson.JSONObject">
+        UPDATE `wy_school_growth`.`base_general_infomation_show`
+        <set>
+            <if test="protein_name != null">
+                `protein_name` = #{protein_name},
+            </if>
+            <if test="short_names != null">
+                `short_names` = #{short_names},
+            </if>
+            <if test="gene_names != null">
+                `gene_names` = #{gene_names},
+            </if>
+            <if test="also_known_as != null">
+                `also_known_as` = #{also_known_as},
+            </if>
+            <if test="gene_id != null">
+                `gene_id` = #{gene_id},
+            </if>
+            <if test="organism != null">
+                `organism` = #{organism},
+            </if>
+            <if test="unipro_entry != null">
+                `unipro_entry` = #{unipro_entry},
+            </if>
+            <if test="c_s_date != null">
+                `c_s_date` = #{c_s_date},
+            </if>
+            <if test="batch != null">
+                `batch` = #{batch},
+            </if>
+            <if test="operator != null">
+                `operator` = #{operator},
+            </if>
+            <if test="protein_name_and_unipro_entry != null">
+                `protein_name_and_unipro_entry` = #{protein_name_and_unipro_entry},
+            </if>
+            <if test="key_words != null">
+                `key_words` = #{key_words},
+            </if>
+            <if test="protein_status != null">
+                `protein_status` = #{protein_status},
+            </if>
+            <if test="family != null">
+                `family` = #{family},
+            </if>
+            <if test="function_pubmed_ids != null">
+                `function_pubmed_ids` = #{function_pubmed_ids},
+            </if>
+            <if test="gene_official_symbol != null">
+                `gene_official_symbol` = #{gene_official_symbol},
+            </if>
+            <if test="gene_also_known_as != null">
+                `gene_also_known_as` = #{gene_also_known_as},
+            </if>
+            <if test="gene_summary != null">
+                `gene_summary` = #{gene_summary},
+            </if>
+            `modify_time` = now()  <!-- 修改时间始终更新为当前时间 -->
+        </set>
+        WHERE `id` = #{id};
+
+
+        UPDATE `wy_school_growth`.`sys_protein_DRGF_code`
+        SET
+        `name` = #{protein_name},
+        `modify_time` = NOW()
+        WHERE
+        `unipro_entry` = #{unipro_entry};
+    </update>
+    <update id="update_base_expression_and_location_show" parameterType="com.alibaba.fastjson.JSONObject">
+        UPDATE `wy_school_growth`.`base_expression_and_location_show`
+        <set>
+            <if test="developmental_stage != null">
+                `developmental_stage` = #{developmental_stage},
+            </if>
+            <if test="induction != null">
+                `induction` = #{induction},
+            </if>
+            <if test="hpa_code != null">
+                `tissue_specificity1` = #{hpa_code},
+            </if>
+            <if test="tissue_specificity2 != null">
+                `tissue_specificity2` = #{tissue_specificity2},
+            </if>
+            <if test="tissue_specificity3 != null">
+                `tissue_specificity3` = #{tissue_specificity3},
+            </if>
+            <if test="cell_type_specificity2 != null">
+                `cell_type_specificity2` = #{cell_type_specificity2},
+            </if>
+            <if test="subcellular_location != null">
+                `subcellular_location` = #{subcellular_location},
+            </if>
+            <if test="RNA_EXPRESSION_OVERVIEW != null">
+                `RNA_EXPRESSION_OVERVIEW` = #{RNA_EXPRESSION_OVERVIEW},
+            </if>
+            <if test="PROTEIN_EXPRESSION_OVERVIEW != null">
+                `PROTEIN_EXPRESSION_OVERVIEW` = #{PROTEIN_EXPRESSION_OVERVIEW},
+            </if>
+            <if test="tissue_specificity_rna != null">
+                `tissue_specificity_rna` = #{tissue_specificity_rna},
+            </if>
+            <if test="single_cell_type_specificity != null">
+                `single_cell_type_specificity` = #{single_cell_type_specificity},
+            </if>
+            <if test="expression_specificity != null">
+                `expression_specificity` = #{expression_specificity},
+            </if>
+            `modify_time` = now()  <!-- 修改时间始终更新为当前时间 -->
+        </set>
+        WHERE  `p_id` = #{p_id};
+    </update>
+    <update id="update_base_expression_and_location_show_hpa" parameterType="com.alibaba.fastjson.JSONObject">
+        UPDATE `wy_school_growth`.`base_expression_and_location_show_hpa`
+        <set>
+            <if test="tissue_specificity1 != null">
+                `tissue_specificity1` = #{tissue_specificity1},
+            </if>
+            <if test="hpa_RNA_EXPRESSION_OVERVIEW != null">
+                `RNA_EXPRESSION_OVERVIEW` = #{hpa_RNA_EXPRESSION_OVERVIEW},
+            </if>
+            <if test="mac_value_RNA_EXPRESSION_OVERVIEW != null">
+                `mac_value_RNA_EXPRESSION_OVERVIEW` = #{mac_value_RNA_EXPRESSION_OVERVIEW},
+            </if>
+            <if test="PROTEIN_EXPRESSION_OVERVIEW != null">
+                `PROTEIN_EXPRESSION_OVERVIEW` = #{PROTEIN_EXPRESSION_OVERVIEW},
+            </if>
+            <if test="single_cell_type_specificity != null">
+                `single_cell_type_specificity` = #{single_cell_type_specificity},
+            </if>
+            <if test="create_time != null">
+                `create_time` = #{create_time},
+            </if>
+            <if test="url != null">
+                `url` = #{url},
+            </if>
+            `modify_time` = now()  <!-- 修改时间始终更新为当前时间 -->
+        </set>
+        WHERE  `hpa_code` = #{hpa_code};
+    </update>
+    <update id="update_base_family_and_domain_show" parameterType="com.alibaba.fastjson.JSONObject">
+        UPDATE `wy_school_growth`.`base_family_and_domain_show`
+        <set>
+            <if test="protein_family != null">
+                `protein_family` = #{protein_family},
+            </if>
+            <if test="interPro_accession != null">
+                `interPro_accession` = #{interPro_accession},
+            </if>
+            <if test="domain != null">
+                `domain` = #{domain},
+            </if>
+            `modify_time` = now()  <!-- 修改时间始终更新为当前时间 -->
+        </set>
+        WHERE `p_id` = #{p_id}
+    </update>
+    <update id="update_base_mutation_and_disease_show" parameterType="com.alibaba.fastjson.JSONObject">
+        UPDATE `wy_school_growth`.`base_mutation_and_disease_show`
+        <set>
+            <if test="involvement_in_disease != null">
+                `involvement_in_disease` = #{involvement_in_disease},
+            </if>
+            <if test="mutagenesis != null">
+                `mutagenesis` = #{mutagenesis},
+            </if>
+            <if test="disease_json != null">
+                `disease_json` = #{disease_json},
+            </if>
+            `modify_time` = now()  <!-- 修改时间始终更新为当前时间 -->
+        </set>
+        WHERE `p_id` = #{p_id}
+    </update>
+    <update id="update_base_ptm_details_show" parameterType="com.alibaba.fastjson.JSONObject">
+        UPDATE `wy_school_growth`.`base_ptm_details_show`
+        <set>
+            <if test="site != null">
+                `site` = #{site},
+            </if>
+            <if test="ptm_type != null">
+                `ptm_type` = #{ptm_type},
+            </if>
+            <if test="ptm_enzyme != null">
+                `ptm_enzyme` = #{ptm_enzyme},
+            </if>
+            <if test="source_all != null">
+                `source_all` = #{source_all},
+            </if>
+            <if test="score_all != null">
+                `score_all` = #{score_all},
+            </if>
+            <if test="pmid != null">
+                `pmid` = #{pmid},
+            </if>
+            <if test="source_txt != null">
+                `source_txt` = #{source_txt},
+            </if>
+            `create_time` = now()  <!-- 修改时间始终更新为当前时间 -->
+        </set>
+        WHERE `p_id` = #{p_id}
+    </update>
+    <delete id="delete_base_ptm_details_show" parameterType="com.alibaba.fastjson.JSONObject">
+        delete from `wy_school_growth`.`base_ptm_details_show`
+        WHERE `p_id` = #{id}
+    </delete>
+    <update id="update_base_protein_function_show" parameterType="com.alibaba.fastjson.JSONObject">
+        UPDATE `wy_school_growth`.`base_protein_function_show`
+        <set>
+            <if test="function != null">
+                `function` = #{function},
+            </if>
+            <if test="gene_ontology_biological_process != null">
+                `gene_ontology_biological_process` = #{gene_ontology_biological_process},
+            </if>
+            <if test="gene_ontology_cellular_component != null">
+                `gene_ontology_cellular_component` = #{gene_ontology_cellular_component},
+            </if>
+            <if test="gene_ontology_molecular_function != null">
+                `gene_ontology_molecular_function` = #{gene_ontology_molecular_function},
+            </if>
+            <if test="function_pubmed_ids != null">
+                `function_pubmed_ids` = #{function_pubmed_ids},
+            </if>
+            `modify_time` = now()  <!-- 修改时间始终更新为当前时间 -->
+        </set>
+        WHERE `p_id` = #{p_id}
+    </update>
+    <update id="update_base_protein_interaction_show" parameterType="com.alibaba.fastjson.JSONObject">
+        UPDATE `wy_school_growth`.`base_protein_interaction_show`
+        <set>
+            <if test="protein_protein_interaction != null">
+                `protein_protein_interaction` = #{protein_protein_interaction},
+            </if>
+            <if test="protein_complex != null">
+                `protein_complex` = #{protein_complex},
+            </if>
+            <if test="ligand_receptor_interaction != null">
+                `ligand_receptor_interaction` = #{ligand_receptor_interaction},
+            </if>
+            <if test="pubmed_ID != null">
+                `pubmed_ID` = #{pubmed_ID},
+            </if>
+            <if test="svg != null">
+                `svg` = #{svg},
+            </if>
+            `modify_time` = now()  <!-- 修改时间始终更新为当前时间 -->
+        </set>
+        WHERE `p_id` = #{p_id}
+    </update>
+    <update id="update_base_protein_sequence_show" parameterType="com.alibaba.fastjson.JSONObject">
+        UPDATE `wy_school_growth`.`base_protein_sequence_show`
+        <set>
+            <if test="complete_form != null">
+                `complete_form` = #{complete_form},
+            </if>
+            <if test="length != null">
+                `length` = #{length},
+            </if>
+            <if test="precursor != null">
+                `precursor` = #{precursor},
+            </if>
+            <if test="precursor_length != null">
+                `precursor_length` = #{precursor_length},
+            </if>
+            <if test="mature_form != null">
+                `mature_form` = #{mature_form},
+            </if>
+            <if test="mature_form_length != null">
+                `mature_form_length` = #{mature_form_length},
+            </if>
+            `modify_time` = now()  <!-- 修改时间始终更新为当前时间 -->
+        </set>
+        WHERE  `p_id` = #{p_id}
+    </update>
+    <update id="update_base_protein_structure_show" parameterType="com.alibaba.fastjson.JSONObject">
+        UPDATE `wy_school_growth`.`base_protein_structure_show`
+        <set>
+            <if test="structure_3D != null">
+                `structure_3D` = #{structure_3D},
+            </if>
+            <if test="PDB_ID != null">
+                `PDB_ID` = #{PDB_ID},
+            </if>
+            <if test="alphaFold_identifier != null">
+                `alphaFold_identifier` = #{alphaFold_identifier},
+            </if>
+            <if test="beta_strand != null">
+                `beta_strand` = #{beta_strand},
+            </if>
+            <if test="helix != null">
+                `helix` = #{helix},
+            </if>
+            <if test="turn != null">
+                `turn` = #{turn},
+            </if>
+            <if test="structure_num != null">
+                `structure_num` = #{structure_num},
+            </if>
+            `modify_time` = now()  <!-- 修改时间始终更新为当前时间 -->
+        </set>
+        WHERE `p_id` = #{p_id}
+    </update>
+    <update id="update_base_drgf_show" parameterType="com.alibaba.fastjson.JSONObject">
+        UPDATE `wy_school_growth`.`base_drgf_show`
+        <set>
+            <if test="entry_name != null">
+                `entry_name` = #{entry_name},
+            </if>
+            <if test="drgf_id != null">
+                `drgf_id` = #{drgf_id},
+            </if>
+            <if test="pathways != null">
+                `pathways` = #{pathways},
+            </if>
+            <if test="c_s_date != null">
+                `c_s_date` = #{c_s_date},
+            </if>
+            <if test="batch != null">
+                `batch` = #{batch},
+            </if>
+            <if test="pathway_data != null">
+                `pathway_data` = #{pathway_data},
+            </if>
+            `modify_time` = now()  <!-- 修改时间始终更新为当前时间 -->
+        </set>
+        WHERE  `p_id` = #{p_id}
+    </update>
+    
+    <select id="select_uniprot_code_exist" parameterType="com.alibaba.fastjson.JSONObject" resultType="int">
+        SELECT
+        COUNT( 1 )
+        FROM
+        base_general_infomation_show
+        <where>
+            unipro_entry = #{unipro_entry}
+            <if test="id != null and id != ''">
+                AND id &lt;&gt; #{id}
+            </if>
+        </where>
+    </select>
+    <select id="select_uniprot_type_exist" parameterType="com.alibaba.fastjson.JSONObject" resultType="int">
+        SELECT COUNT( 1 ) FROM sys_protein_type_unipro
+         WHERE
+             unipro_entry=#{unipro_entry} AND family_id=#{family_id}
+    </select>
+    <insert id="insert_uniprot_type_info" parameterType="com.alibaba.fastjson.JSONObject">
+        INSERT INTO
+            `wy_school_growth`.`sys_protein_type_unipro`
+            (  `type_id`, `family_id`, `unipro_entry`, `modify_time`,  `family_name` )
+        VALUES
+            ( #{family_id}, #{family_id}, #{unipro_entry}, NOW(), #{family_name} );
+    </insert>
+</mapper>

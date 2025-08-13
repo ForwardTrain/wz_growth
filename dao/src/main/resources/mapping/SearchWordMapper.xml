@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.school.wz_growth.dao.SearchWordMapper">
+
+<select id="sel_list" parameterType="com.alibaba.fastjson.JSONObject" resultType="com.alibaba.fastjson.JSONObject">
+  select
+  id,
+  num,
+  date_format(create_time,'%Y-%m-%d %H:%i:%s') create_time,
+  date_format(last_search_time,'%Y-%m-%d %H:%i:%s') last_search_time,
+  name
+  from search_word
+  where 1=1
+  <if test="status != null and status != ''">
+    and status = #{status}
+  </if>
+  <if test="name != null and name != ''">
+    and name regexp #{name}
+  </if>
+  limit ${start},${limit}
+</select>
+<select id="sel_list_total" parameterType="com.alibaba.fastjson.JSONObject" resultType="int">
+  select
+  count(1)
+  from search_word
+  where 1=1
+    <if test="status != null and status != ''">
+        and status = #{status}
+    </if>
+    <if test="name != null and name != ''">
+        and name regexp #{name}
+    </if>
+</select>
+
+    <delete id="del_list"  parameterType="com.alibaba.fastjson.JSONObject">
+        delete from search_word
+        where id in (${ids})
+    </delete>
+
+    <select id="sel_word_by_name"  parameterType="com.alibaba.fastjson.JSONObject" resultType="int">
+        select count(1) from search_word where name =#{name}
+    </select>
+    <select id="sel_word_by_name_and_id"  parameterType="com.alibaba.fastjson.JSONObject" resultType="int">
+        select count(1) from search_word where name =#{name} and id !=#{id}
+    </select>
+
+    <insert id="add_list"  parameterType="com.alibaba.fastjson.JSONObject">
+        insert into search_word(name,num,create_time,operator)
+        values(#{name},#{num},now(),#{operator})
+    </insert>
+
+    <update id="upd_list"  parameterType="com.alibaba.fastjson.JSONObject">
+        update search_word
+        set
+        name =#{name},
+        num=#{num},
+        <if test="status != null and status != ''">
+            status=#{status},
+        </if>
+        modify_time=now()
+        where id=#{id}
+    </update>
+
+    <update id="upd_num"  parameterType="com.alibaba.fastjson.JSONObject">
+        update search_word
+        set num=num+1,
+        last_search_time=now()
+        where name=#{name}
+    </update>
+    <insert id="add_new_word"  parameterType="com.alibaba.fastjson.JSONObject">
+        insert into search_word(name,num,create_time,operator,last_search_time,status)
+        values(#{name},1,now(),#{operator},now(),1)
+    </insert>
+
+    <select id="search_set_list" parameterType="com.alibaba.fastjson.JSONObject"
+            resultType="com.alibaba.fastjson.JSONObject" >
+        select
+        id,type_name,name,status
+        from search_set
+        where 1=1
+        <if test="type_name != null and type_name != ''">
+            and type_name=#{type_name}
+        </if>
+        order by type_name
+    </select>
+    <select id="search_type_name_list" parameterType="com.alibaba.fastjson.JSONObject"
+            resultType="com.alibaba.fastjson.JSONObject" >
+        select
+        distinct type_name
+        from search_set
+    </select>
+    <update id="upd_search_set_list" parameterType="com.alibaba.fastjson.JSONObject">
+        update search_set
+        set status=if(status=1,2,1)
+        where id=#{id}
+    </update>
+</mapper>
